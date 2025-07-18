@@ -5,7 +5,6 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg)](https://flask.palletsprojects.com/)
 [![Neo4j](https://img.shields.io/badge/Neo4j-4.4+-orange.svg)](https://neo4j.com/)
-[![License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
 
 MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）技术的项目，旨在提供高效、准确的医学知识服务。项目通过整合医学文献、临床指南和病例报告等多源数据，构建结构化的知识图谱，并利用大模型实现智能问答和辅助决策支持
 
