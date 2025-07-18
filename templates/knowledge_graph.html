@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/knowledge_graph.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- 侧边导航 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="hospital-logo">
+                <i class="fas fa-book-medical"></i>
+                <h2>健康知识平台</h2>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <div class="nav-group">
+                <div class="nav-title">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                    <i class="fas fa-user-injured"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link">
+                    <i class="fas fa-book-medical"></i>
+                    <span>知识库管理</span>
+                </a>
+                <!-- 新增知识图谱管理菜单 -->
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link active">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>知识图谱管理</span>
+                </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">系统设置</div>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- 主内容区 -->
+     <div class="main-content">
+        <div class="top-nav">
+            <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="搜索知识文档..."></div>
+            <div class="user-info"><i class="fas fa-bell"></i><span class="badge">3</span><div class="user-avatar">管</div><div class="user-name">管理员</div></div>
+        </div>
+
+        <!-- 内容区 -->
+        <div class="content-area">
+            <div class="content-header"><h1>健康知识图谱管理</h1><p>可视化健康知识图谱并管理实体关系</p></div>
+
+            <div class="kg-control-panel">
+                <div class="kg-input-group">
+                    <textarea id="kg-text-input" placeholder="输入健康知识文本（如：'维生素C有助于增强免疫力'）"></textarea>
+                    <button id="kg-process-btn" class="btn btn-primary"><i class="fas fa-brain"></i> 分析并更新图谱</button>
+                </div>
+                <div class="kg-actions">
+                    <button id="kg-refresh" class="btn btn-outline"><i class="fas fa-sync"></i> 刷新图谱</button>
+                    <button id="kg-export" class="btn btn-outline"><i class="fas fa-download"></i> 导出图谱</button>
+                    <!-- 新增查询按钮 -->
+                    <button class="btn btn-sm btn-outline-info" onclick="kgQuery('path')">🔍 最短路径</button>
+                    <button class="btn btn-sm btn-outline-info" onclick="kgQuery('centrality')">📊 中心性</button>
+                    <button class="btn btn-sm btn-outline-info" onclick="kgQuery('search')">🔎 关键词搜索</button>
+                    <div class="kg-stats">
+                        <span><i class="fas fa-cube"></i> 实体: <span id="entity-count">{{ entity_count }}</span></span>
+                        <span><i class="fas fa-link"></i> 关系: <span id="relation-count">{{ relation_count }}</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图谱可视化 -->
+            <div class="kg-visualization-container">
+                <div id="kg-network-container"></div>
+                <div class="kg-controls">
+                    <button id="zoom-in" class="btn-icon" title="放大"><i class="fas fa-search-plus"></i></button>
+                    <button id="zoom-out" class="btn-icon" title="缩小"><i class="fas fa-search-minus"></i></button>
+                    <button id="reset-view" class="btn-icon" title="重置视图"><i class="fas fa-crosshairs"></i></button>
+                </div>
+                <div class="kg-legend">
+                    <div class="legend-item"><span class="color-dot person"></span>人物</div>
+                    <div class="legend-item"><span class="color-dot organization"></span>组织</div>
+                    <div class="legend-item"><span class="color-dot location"></span>地点</div>
+                    <div class="legend-item"><span class="color-dot event"></span>事件</div>
+                    <div class="legend-item"><span class="color-dot concept"></span>概念</div>
+                    <div class="legend-item"><span class="color-dot technology"></span>技术</div>
+                    <div class="legend-item"><span class="color-dot disease"></span>疾病</div>
+                    <div class="legend-item"><span class="color-dot drug"></span>药物</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 加载提示 -->
+<div class="modal-overlay" id="loadingModal" style="display:none;">
+    <div class="modal-content" style="width:300px;text-align:center;">
+        <h3>正在处理...</h3>
+        <div class="loading-spinner"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+<script src="{{ url_for('static', filename='js/knowledge_graph.js') }}"></script>
+{% endblock %}

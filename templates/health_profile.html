@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/health_profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="health-container">
+    <!-- 导航栏 -->
+    <nav class="health-nav">
+        <div class="nav-logo">
+            <i class="fas fa-book-medical"></i>
+            <span>健康知识平台</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="active">健康画像</a>
+            <a href="{{ url_for('diagnosis') }}">知识推送</a>
+            <a href="{{ url_for('admin_dashboard') }}">后台管理</a>
+            <a href="{{ url_for('logout') }}">退出登录</a>
+        </div>
+    </nav>
+
+
+    <!-- 欢迎横幅 -->
+    <div class="welcome-banner">
+        <h1>健康画像 - {{ health_data.name }}</h1>
+        <p>您的全面健康档案信息</p>
+    </div>
+
+        <!-- 添加自动刷新计时器 -->
+    <div class="auto-refresh">
+        <label>
+            <input type="checkbox" id="autoRefreshToggle" checked>
+            自动刷新数据 (每30秒)
+        </label>
+    </div>
+
+    <!-- 添加手动刷新按钮 -->
+    <div class="refresh-controls">
+        <button class="btn btn-outline" id="manualRefreshBtn">
+            <i class="fas fa-sync-alt"></i> 立即刷新数据
+        </button>
+    </div>
+
+    <!-- 基本信息卡片 -->
+    <div class="health-cards">
+        <!-- 个人信息 -->
+        <div class="health-card">
+            <h2><i class="fas fa-user"></i> 个人信息</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">姓名:</span>
+                    <span class="value">{{ health_data.name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">手机号:</span>
+                    <span class="value">{{ health_data.phone }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">年龄:</span>
+                    <span class="value">{{ health_data.age }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">性别:</span>
+                    <span class="value">{{ health_data.gender }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">民族:</span>
+                    <span class="value">{{ health_data.ethnicity }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">职业:</span>
+                    <span class="value">{{ health_data.occupation }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">主业:</span>
+                    <span class="value">{{ health_data.main_activity }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">文化程度:</span>
+                    <span class="value">{{ health_data.education }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">就业状况:</span>
+                    <span class="value">{{ health_data.employment }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">婚姻状况:</span>
+                    <span class="value">{{ health_data.marital_status }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 身体指标 -->
+        <div class="health-card">
+            <h2><i class="fas fa-heartbeat"></i> 身体指标</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">身高:</span>
+                    <span class="value">{{ health_data.height }} cm</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">体重:</span>
+                    <span class="value">{{ health_data.weight }} kg</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">BMI指数:</span>
+                    <span class="value">{{ health_data.bmi }} ({{ health_data.bmi_category }})</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">收缩压:</span>
+                    <span class="value">{{ health_data.systolic_bp }} mmHg</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">舒张压:</span>
+                    <span class="value">{{ health_data.diastolic_bp }} mmHg</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">血压测量时间:</span>
+                    <span class="value">{{ health_data.bp_measure_time }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">是否吸烟:</span>
+                    <span class="value">{{ health_data.is_smoker }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">是否饮酒:</span>
+                    <span class="value">{{ health_data.is_drinker }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">是否规律运动:</span>
+                    <span class="value">{{ health_data.regular_exercise }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 健康状态 -->
+        <div class="health-card">
+            <h2><i class="fas fa-stethoscope"></i> 健康状态</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">健康状况:</span>
+                    <span class="value">{{ health_data.conditions }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">过敏史:</span>
+                    <span class="value">{{ health_data.allergies }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">疾病史:</span>
+                    <span class="value">{{ health_data.disease_history }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">家族病史:</span>
+                    <span class="value">{{ health_data.family_history }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">手术史:</span>
+                    <span class="value">{{ health_data.surgery_history }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">服用药品:</span>
+                    <span class="value">{{ health_data.medications }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 健康记录时间线 -->
+    <div class="medical-timeline">
+        <h2><i class="fas fa-history"></i> 健康记录</h2>
+        <div class="timeline-container">
+            <div class="timeline">
+                {% for record in medical_records %}
+                <div class="timeline-item">
+                    <div class="timeline-date">
+                        <i class="far fa-calendar-alt"></i> {{ record.date }}
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">{{ record.department }} - {{ record.doctor }}</div>
+                        <div class="timeline-desc">{{ record.description }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 健康指标表格 -->
+    <div class="metrics-table">
+        <h2><i class="fas fa-chart-bar"></i> 近期健康指标</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>检查项目</th>
+                        <th>结果</th>
+                        <th>参考范围</th>
+                        <th>单位</th>
+                        <th>检查日期</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for metric in check_metrics %}
+                    <tr>
+                        <td>{{ metric.item }}</td>
+                        <td>{{ metric.result }}</td>
+                        <td>{{ metric.range }}</td>
+                        <td>{{ metric.unit }}</td>
+                        <td>{{ metric.date }}</td>
+                        <td>
+                            <span class="status {{ metric.status }}">
+                                {% if metric.status == 'normal' %}正常{% else %}异常{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 健康知识平台 | 健康数据管理系统 v1.0</p>
+    </footer>
+</div>
+{% endblock %}

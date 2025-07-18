@@ -1,0 +1,659 @@
+/* 知识库管理专用样式 */
+.knowledge-content {
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.upload-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px dashed #dee2e6;
+}
+
+.upload-area {
+    border: 2px dashed #4db3d3;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    background: rgba(77, 179, 211, 0.05);
+    border-color: #2c7fb8;
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: #4db3d3;
+    margin-bottom: 15px;
+}
+
+.upload-area p {
+    font-size: 1.1rem;
+    color: #6c757d;
+}
+
+.upload-form {
+    text-align: center;
+}
+
+.knowledge-files {
+    margin-bottom: 30px;
+}
+
+.files-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.files-table th {
+    background: #f1f5f9;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #2c7fb8;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.files-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.files-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.no-files {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.vector-db-status {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(44, 127, 184, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.5rem;
+    color: #2c7fb8;
+}
+
+.stat-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: #2c7fb8;
+}
+
+.stat-info p {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.vectorization-output {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.output-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+
+.output-container {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 20px;
+    color: #cbd5e1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95rem;
+    max-height: 400px;
+    overflow-y: auto;
+    min-height: 200px;
+}
+
+.output-container .empty-output {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 150px;
+    color: #94a3b8;
+}
+
+.output-container .empty-output i {
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+/* 输出消息样式 */
+.output-message {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.success-message {
+    color: #10b981;
+}
+
+.error-message {
+    color: #ef4444;
+}
+
+.warning-message {
+    color: #f59e0b;
+}
+
+.info-message {
+    color: #3b82f6;
+}
+
+.stats-section {
+    color: #8b5cf6;
+    font-weight: 600;
+    margin: 15px 0 10px;
+}
+
+.stat-item {
+    margin-left: 20px;
+    color: #94a3b8;
+}
+
+/* 上传状态 */
+#uploadStatus {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    display: none;
+}
+
+.upload-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid #10b981;
+    color: #10b981;
+}
+
+.upload-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+/* 添加处理状态样式 */
+.processing {
+    padding: 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin-bottom: 15px;
+}
+
+.info-message {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+    margin: 10px 0;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: #fff2f0;
+    border-left: 4px solid #ff4d4f;
+    margin: 10px 0;
+}
+
+.stats-section {
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.stat-item {
+    padding: 5px 15px;
+}
+
+/* 高亮拖放区域 */
+.highlight {
+    background-color: #f0f7ff;
+    border: 2px dashed #1890ff;
+}
+/* 添加文件信息样式 */
+.file-info {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.file-type {
+    background-color: #e6f7ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+/* 添加上传进度条样式 */
+.upload-progress {
+    text-align: center;
+    padding: 20px;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: #1890ff;
+    width: 0%;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    transition: width 0.3s ease;
+}
+
+/* 文件类型图标颜色 */
+.fa-file-pdf { color: #e74c3c; }
+.fa-file-word { color: #2b579a; }
+.fa-file-alt { color: #27ae60; }
+.fa-file-code { color: #9b59b6; }
+
+/* 按钮加载状态 */
+.btn .fa-spinner {
+    margin-right: 5px;
+}
+
+/* 错误追踪样式 */
+.error-trace {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    max-height: 200px;
+    overflow: auto;
+    margin-top: 10px;
+}
+
+/* 处理状态样式 */
+.processing {
+    padding: 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin-bottom: 15px;
+}
+
+.info-message {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+    margin: 10px 0;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: #fff2f0;
+    border-left: 4px solid #ff4d4f;
+    margin: 10px 0;
+}
+
+.stats-section {
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.stat-item {
+    padding: 5px 15px;
+}
+
+
+/* 新增关键修复样式 */
+#documentModal.form-control,
+#documentModal.form-label,
+#documentModal.upload-area,
+#documentModal.btn {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 确保标签页内容可见 */
+.tab-pane {
+    display: block;
+    opacity: 1;
+    height: auto;
+}
+
+/* 修复隐藏状态 */
+#fileTab:not(.show):not(.active),
+#urlTab:not(.show):not(.active) {
+    display: none !important;
+}
+
+#fileTab.show.active,
+#urlTab.show.active {
+    display: block !important;
+}
+
+/* 修复上传区域 */
+.upload-area {
+    position: relative;
+    z-index: 10;
+}
+
+/* 修复输入框可见性 */
+#fileDocumentName,
+#fileTags,
+#urlDocumentName,
+#urlLink,
+#urlTags {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+/* 标签样式 */
+.form-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+    display: block;
+}
+
+/* 模态框内容可见性 */
+.modal-body .tab-content > .tab-pane {
+    display: block;
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-body .tab-content > .tab-pane.active {
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+}
+/* 添加向量化输出区域的样式 */
+.output-container {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 15px;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 5px;
+    height: 400px;
+    overflow-y: auto;
+}
+
+.processing {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.info-message {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: #fff2f0;
+    border-left: 4px solid #ff4d4f;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+/* 添加文件类型标签样式 */
+.file-type-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.file-type-pdf {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.file-type-docx {
+    background-color: #2b579a;
+    color: white;
+}
+
+.file-type-doc {
+    background-color: #2b579a;
+    color: white;
+    opacity: 0.8;
+}
+
+.file-type-txt {
+    background-color: #27ae60;
+    color: white;
+}
+
+.file-type-md {
+    background-color: #9b59b6;
+    color: white;
+}
+/* 添加文件类型标签样式 */
+.file-type-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    color: white;
+}
+
+.file-type-pdf {
+    background-color: #e74c3c;
+}
+
+.file-type-docx, .file-type-doc {
+    background-color: #2b579a;
+}
+
+.file-type-txt {
+    background-color: #27ae60;
+}
+
+.file-type-md {
+    background-color: #9b59b6;
+}
+
+/* 向量化输出区域样式 */
+.output-container {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 15px;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 5px;
+    height: 300px;
+    overflow-y: auto;
+}
+
+.processing {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.info-message {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: #fff2f0;
+    border-left: 4px solid #ff4d4f;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+/* 按钮加载状态 */
+.btn .fa-spinner {
+    margin-right: 5px;
+    animation: fa-spin 1s infinite linear;
+}
+
+/* 模态框中的文件类型提示 */
+.file-type-hint {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+/* 添加处理状态样式 */
+.processing {
+    padding: 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.info-message {
+    padding: 10px 15px;
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.success-message {
+    padding: 10px 15px;
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.error-message {
+    padding: 10px 15px;
+    background-color: #fff2f0;
+    border-left: 4px solid #ff4d4f;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+/* 按钮加载状态 */
+.btn .fa-spinner {
+    margin-right: 5px;
+    animation: fa-spin 1s infinite linear;
+}
+
+/* 状态卡片样式 */
+.stat-card .stat-icon {
+    transition: all 0.3s ease;
+}
+
+/* 状态正常时的样式 */
+.status-normal .stat-icon {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.status-normal .stat-icon i {
+    color: #10b981 !important;
+}
+
+/* 状态错误时的样式 */
+.status-error .stat-icon {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.status-error .stat-icon i {
+    color: #ef4444 !important;
+}

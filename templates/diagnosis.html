@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <title>AI 健康知识推送 - 实时预览</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <!-- 图标 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <!-- 代码高亮 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+  <!-- Markdown 样式 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css"/>
+  <!-- 本页样式 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/diagnosis.css') }}"/>
+</head>
+<body>
+  <!-- 动态背景 -->
+  <div id="particles-js"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- 导航 -->
+  <nav class="health-nav">
+    <div class="nav-logo"><i class="fas fa-brain"></i> AI 健康助手</div>
+    <div class="nav-links">
+      <a href="{{ url_for('health_profile') }}"><i class="fas fa-user-circle"></i> 健康画像</a>
+      <a href="{{ url_for('diagnosis') }}" class="active"><i class="fas fa-magic"></i> 知识推送</a>
+      <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> 退出</a>
+    </div>
+  </nav>
+
+  <!-- 主面板 -->
+  <main class="main-container">
+    <h1 class="neon-title">💡 专属健康知识推送</h1>
+    <p class="subtitle">输入补充信息，AI 将即时生成个性化健康知识</p>
+
+    <div class="diagnosis-panel glass">
+      <!-- 输入 -->
+      <section class="input-area">
+        <label for="userInputText" class="floating-label">🖊️ 补充信息（选填）</label>
+        <textarea
+          id="userInputText"
+          placeholder="例如：最近晚上胸闷、头晕，血压偏高..."
+          maxlength="500"></textarea>
+        <div class="char-count"><span id="charCount">0</span> / 500</div>
+      </section>
+
+      <!-- 按钮 -->
+      <section class="action-area">
+        <button id="startDiagnosis" class="cyber-btn">
+          <i class="fas fa-bolt"></i>
+          <span>健康知识推送</span>
+        </button>
+      </section>
+
+      <!-- 输出 -->
+      <section class="output-area">
+        <div id="typingIndicator" class="hidden">
+          <div class="spinner"></div>
+          <span>AI 正在分析中...</span>
+        </div>
+        <div id="outputContent" class="markdown-body"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 依赖 -->
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- 本页脚本 -->
+  <script src="{{ url_for('static', filename='js/diagnosis.js') }}"></script>
+</body>
+</html>

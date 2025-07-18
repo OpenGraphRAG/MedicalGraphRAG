@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- 侧边导航 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="hospital-logo">
+                <i class="fas fa-book-medical"></i>
+                <h2>健康知识平台</h2>
+            </div>
+        </div>
+
+        <div class="nav-links">
+            <div class="nav-group">
+                <div class="nav-title">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link active">
+                    <i class="fas fa-user-injured"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link">
+                    <i class="fas fa-book-medical"></i>
+                    <span>知识库管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>知识图谱管理</span>
+                </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">系统设置</div>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <p>系统版本: v3.2.1</p>
+            <p>最后更新: {{ current_year }}</p>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="top-nav">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchPatients" placeholder="搜索用户、健康档案或数据...">
+            </div>
+
+            <div class="user-info">
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-avatar">管</div>
+                <div class="user-details">
+                    <div class="user-name">管理员</div>
+                    <div class="user-role">系统管理员</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-area">
+            <div class="content-header">
+                <h1>用户健康档案管理</h1>
+                <p>管理所有注册用户的健康档案和健康数据</p>
+            </div>
+
+            <div class="dashboard-actions">
+                <div class="action-left">
+                    <button class="btn btn-outline" id="refreshPatients">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-filter"></i> 筛选
+                    </button>
+                    <div class="records-count">
+                        显示 <strong>{{ ((page-1)*per_page)+1 }}-{{ [page*per_page, total]|min }}</strong> 条，
+                        共 <strong>{{ total }}</strong> 条记录
+                    </div>
+                </div>
+            </div>
+
+            <div class="patients-table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>用户ID</th>
+                        <th>姓名</th>
+                        <th>年龄</th>
+                        <th>性别</th>
+                        <th>血型</th>
+                        <th>健康状况</th>
+                        <th>注册时间</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.id }}</td>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td>
+                        <td>{{ patient.blood_type }}</td>
+                        <td>{{ patient.conditions }}</td>
+                        <td>{{ patient.created_at }}</td>
+                        <td class="actions">
+                            <button class="btn-icon edit" title="编辑健康信息" data-id="{{ patient.id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon view" title="查看详情" data-id="{{ patient.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for('admin_dashboard', page=page-1) }}" class="btn btn-outline">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+
+                {% for p in range(1, total_pages+1) %}
+                {% if p == page %}
+                <a href="#" class="btn btn-outline active">{{ p }}</a>
+                {% else %}
+                <a href="{{ url_for('admin_dashboard', page=p) }}" class="btn btn-outline">{{ p }}</a>
+                {% endif %}
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <a href="{{ url_for('admin_dashboard', page=page+1) }}" class="btn btn-outline">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户健康信息编辑模态框 -->
+<div class="modal-overlay" id="patientModal" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-edit"></i> 编辑用户健康信息</h2>
+            <button class="btn-icon close" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-tab="basic">基本信息</button>
+                <button class="tab-btn" data-tab="medical">健康记录</button>
+                <button class="tab-btn" data-tab="metrics">健康指标</button>
+            </div>
+
+            <!-- 基本信息选项卡 -->
+            <!-- 在基本信息选项卡中添加新字段 -->
+            <div class="tab-content active" id="basicTab">
+                <form id="basicInfoForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>用户姓名</label>
+                            <input type="text" class="form-control" id="patientName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <select class="form-control" id="patientGender">
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>年龄</label>
+                            <input type="number" class="form-control" id="patientAge" required>
+                        </div>
+                        <div class="form-group">
+                            <label>联系电话</label>
+                            <input type="tel" class="form-control" id="patientPhone" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>血型</label>
+                            <select class="form-control" id="patientBloodType">
+                                <option value="A型">A型</option>
+                                <option value="B型">B型</option>
+                                <option value="AB型">AB型</option>
+                                <option value="O型">O型</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>身高</label>
+                            <input type="text" class="form-control" id="patientHeight" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>体重</label>
+                            <input type="text" class="form-control" id="patientWeight" required>
+                        </div>
+                        <div class="form-group">
+                            <label>BMI指数</label>
+                            <input type="text" class="form-control" id="patientBMI" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>过敏史</label>
+                            <input type="text" class="form-control" id="patientAllergies"
+                                   placeholder="如：青霉素、花粉等">
+                        </div>
+                        <div class="form-group">
+                            <label>健康状态</label>
+                            <input type="text" class="form-control" id="patientConditions"
+                                   placeholder="如：高血压、糖尿病等">
+                        </div>
+                    </div>
+
+                    <!-- 新增字段开始 -->
+                    <div class="form-section">
+                        <h3>扩展健康信息</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>职业</label>
+                                <input type="text" class="form-control" id="patientOccupation">
+                            </div>
+                            <div class="form-group">
+                                <label>民族</label>
+                                <input type="text" class="form-control" id="patientEthnicity">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>主业</label>
+                                <input type="text" class="form-control" id="patientMainActivity">
+                            </div>
+                            <div class="form-group">
+                                <label>文化程度</label>
+                                <select class="form-control" id="patientEducation">
+                                    <option value="小学">小学</option>
+                                    <option value="初中">初中</option>
+                                    <option value="高中">高中</option>
+                                    <option value="大专">大专</option>
+                                    <option value="本科">本科</option>
+                                    <option value="硕士">硕士</option>
+                                    <option value="博士">博士</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>就业状况</label>
+                                <select class="form-control" id="patientEmployment">
+                                    <option value="在职">在职</option>
+                                    <option value="失业">失业</option>
+                                    <option value="退休">退休</option>
+                                    <option value="学生">学生</option>
+                                    <option value="自由职业">自由职业</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>婚姻状况</label>
+                                <select class="form-control" id="patientMaritalStatus">
+                                    <option value="未婚">未婚</option>
+                                    <option value="已婚">已婚</option>
+                                    <option value="离异">离异</option>
+                                    <option value="丧偶">丧偶</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>是否吸烟</label>
+                                <select class="form-control" id="patientIsSmoker">
+                                    <option value="是">是</option>
+                                    <option value="否">否</option>
+                                    <option value="已戒烟">已戒烟</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>是否饮酒</label>
+                                <select class="form-control" id="patientIsDrinker">
+                                    <option value="是">是</option>
+                                    <option value="否">否</option>
+                                    <option value="偶尔">偶尔</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>手术史</label>
+                                <textarea class="form-control" id="patientSurgeryHistory" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>服用药品</label>
+                                <textarea class="form-control" id="patientMedications" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>疾病史</label>
+                                <textarea class="form-control" id="patientDiseaseHistory" rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>家族病史</label>
+                                <textarea class="form-control" id="patientFamilyHistory" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>收缩压</label>
+                                <input type="text" class="form-control" id="patientSystolicBp">
+                            </div>
+                            <div class="form-group">
+                                <label>舒张压</label>
+                                <input type="text" class="form-control" id="patientDiastolicBp">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>血压测量时间</label>
+                                <input type="datetime-local" class="form-control" id="patientBpMeasureTime">
+                            </div>
+                            <div class="form-group">
+                                <label>是否规律运动</label>
+                                <select class="form-control" id="patientRegularExercise">
+                                    <option value="是">是</option>
+                                    <option value="否">否</option>
+                                    <option value="偶尔">偶尔</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 新增字段结束 -->
+
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> 保存基本信息
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 健康记录选项卡 -->
+            <div class="tab-content" id="medicalTab">
+                <div class="medical-records">
+                    <div class="records-header">
+                        <h3>健康记录</h3>
+                        <button class="btn btn-outline" id="addRecordBtn">
+                            <i class="fas fa-plus"></i> 添加记录
+                        </button>
+                    </div>
+
+                    <div class="records-list" id="recordsList">
+                        <!-- 健康记录将通过JS动态加载 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 健康指标选项卡 -->
+            <div class="tab-content" id="metricsTab">
+                <div class="metrics-table">
+                    <div class="table-header">
+                        <h3>健康指标记录</h3>
+                        <button class="btn btn-outline" id="addMetricBtn">
+                            <i class="fas fa-plus"></i> 添加指标
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="metricsTable">
+                            <thead>
+                            <tr>
+                                <th>检查项目</th>
+                                <th>结果</th>
+                                <th>参考范围</th>
+                                <th>单位</th>
+                                <th>检查日期</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <!-- 健康指标将通过JS动态加载 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 用户健康信息预览模态框 -->
+<div class="modal-overlay" id="previewModal" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h2><i class="fas fa-user"></i> 用户健康信息预览</h2>
+            <button class="btn-icon close" id="closePreviewModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <div class="preview-section">
+                <h3>基本信息</h3>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>姓名：</strong>
+                        <span id="previewName"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>年龄：</strong>
+                        <span id="previewAge"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>性别：</strong>
+                        <span id="previewGender"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>联系电话：</strong>
+                        <span id="previewPhone"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>身高：</strong>
+                        <span id="previewHeight"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>体重：</strong>
+                        <span id="previewWeight"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>BMI：</strong>
+                        <span id="previewBMI"></span> (<span id="previewBMICategory"></span>)
+                    </div>
+                    <div class="preview-item">
+                        <strong>血型：</strong>
+                        <span id="previewBloodType"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3>健康状况</h3>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>健康状态：</strong>
+                        <span id="previewConditions"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>过敏史：</strong>
+                        <span id="previewAllergies"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>疾病史：</strong>
+                        <span id="previewDiseaseHistory"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>家族病史：</strong>
+                        <span id="previewFamilyHistory"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>手术史：</strong>
+                        <span id="previewSurgeryHistory"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>服用药品：</strong>
+                        <span id="previewMedications"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3>生活习惯</h3>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>是否吸烟：</strong>
+                        <span id="previewIsSmoker"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>是否饮酒：</strong>
+                        <span id="previewIsDrinker"></span>
+                    </div>
+                </div>
+                <div class="preview-row">
+                    <div class="preview-item">
+                        <strong>是否规律运动：</strong>
+                        <span id="previewRegularExercise"></span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>职业：</strong>
+                        <span id="previewOccupation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

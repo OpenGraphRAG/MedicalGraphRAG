@@ -1,0 +1,407 @@
+.health-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.health-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.nav-logo i {
+    margin-right: 10px;
+    font-size: 1.8rem;
+}
+
+.nav-links a {
+    margin-left: 25px;
+    text-decoration: none;
+    color: var(--gray);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-links a.active, .nav-links a:hover {
+    color: var(--primary);
+}
+
+.welcome-banner {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-banner h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.health-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.health-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.health-card:hover {
+    transform: translateY(-5px);
+}
+
+.health-card h2 {
+    color: var(--primary);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--light-gray);
+    display: flex;
+    align-items: center;
+}
+
+.health-card h2 i {
+    margin-right: 12px;
+    font-size: 1.4rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--light-gray);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.value {
+    color: var(--gray);
+    font-weight: 400;
+}
+
+.medical-timeline {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.medical-timeline h2 {
+    color: var(--primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.medical-timeline h2 i {
+    margin-right: 12px;
+}
+
+.timeline-container {
+    position: relative;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 20px 0;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 4px;
+    background: var(--secondary);
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    padding-left: 30px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--primary);
+    z-index: 2;
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.timeline-date i {
+    margin-right: 8px;
+}
+
+.timeline-content {
+    background: var(--light);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 3px solid var(--primary);
+}
+
+.timeline-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--dark);
+    font-size: 1.1rem;
+}
+
+.timeline-desc {
+    color: var(--gray);
+    line-height: 1.7;
+}
+
+.metrics-table {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.metrics-table h2 {
+    color: var(--primary);
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.metrics-table h2 i {
+    margin-right: 12px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+th {
+    background: var(--light);
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status.normal {
+    background: rgba(40, 167, 69, 0.15);
+    color: var(--success);
+}
+
+.status.warning {
+    background: rgba(255, 193, 7, 0.15);
+    color: var(--warning);
+}
+
+footer {
+    text-align: center;
+    padding: 20px 0;
+    color: var(--gray);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--light-gray);
+    margin-top: 30px;
+}
+/* 新增样式 */
+.health-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.health-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease;
+}
+
+.health-card:hover {
+    transform: translateY(-5px);
+}
+
+.health-card h2 {
+    color: #2c7fb8;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+
+.health-card h2 i {
+    margin-right: 12px;
+    font-size: 1.4rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e9ecef;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.label {
+    font-weight: 500;
+    color: #343a40;
+    min-width: 120px;
+}
+
+.value {
+    color: #6c757d;
+    font-weight: 400;
+    text-align: right;
+    flex: 1;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+    .health-cards {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .health-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .info-item {
+        flex-direction: column;
+    }
+
+    .label {
+        margin-bottom: 4px;
+    }
+
+    .value {
+        text-align: left;
+    }
+}
+/* 在原有样式基础上添加 */
+.health-card {
+    max-height: 600px; /* 增加卡片高度以适应更多内容 */
+    overflow-y: auto;  /* 添加滚动条 */
+}
+
+.info-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* 更灵活的布局 */
+    gap: 15px; /* 增加间距 */
+}
+
+.info-item {
+    padding: 10px 0; /* 增加垂直间距 */
+    border-bottom: 1px dashed #e9ecef;
+}
+
+.label {
+    min-width: 150px; /* 增加标签宽度 */
+    font-weight: 600; /* 加粗标签 */
+    color: #2c7fb8;  /* 使用主题色 */
+}
+
+.value {
+    color: #495057; /* 深色文本 */
+    font-weight: 400;
+    text-align: left; /* 左对齐值 */
+}
+
+/* 响应式调整 */
+@media (max-width: 992px) {
+    .health-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .label {
+        min-width: 120px;
+    }
+}

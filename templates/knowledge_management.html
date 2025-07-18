@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/knowledge.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    /* 模态框样式 */
+    .modal-content {
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+    .modal-header {
+        background: #4db3d3;
+        color: white;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
+    .upload-area {
+        border: 2px dashed #4db3d3;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover {
+        background: rgba(77, 179, 211, 0.05);
+        border-color: #2c7fb8;
+    }
+    .badge-tag {
+        background: #e6f7ff;
+        color: #1890ff;
+        padding: 5px 10px;
+        border-radius: 15px;
+        margin-right: 5px;
+        font-weight: normal;
+    }
+    .btn-action {
+        margin: 0 3px;
+        padding: 5px 10px;
+    }
+    /* 确保导航栏可见 */
+    .sidebar {
+        width: 250px;
+        background: #2c3e50;
+        color: white;
+        height: 100vh;
+        position: fixed;
+        overflow-y: auto;
+    }
+    .main-content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
+
+    /* 重构标签页样式 */
+    .document-type-tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .document-type-tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-radius: 5px 5px 0 0;
+        margin-right: 5px;
+        background-color: #f8f9fa;
+    }
+    .document-type-tab.active {
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+        border-bottom: none;
+        margin-bottom: -1px;
+    }
+    .document-form-section {
+        display: none;
+    }
+    .document-form-section.active {
+        display: block;
+    }
+
+    /* 确保表单元素可见 */
+    .form-control {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container d-flex">
+    <!-- 侧边导航 -->
+    <div class="sidebar">
+        <div class="sidebar-header p-3">
+            <div class="hospital-logo d-flex align-items-center">
+                <i class="fas fa-book-medical fa-2x me-2"></i>
+                <h2 class="mb-0">健康知识平台</h2>
+            </div>
+        </div>
+
+        <div class="nav-links p-3">
+            <div class="nav-group mb-4">
+                <div class="nav-title text-uppercase small text-muted mb-2">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-user-injured me-2"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link active d-block p-2 mb-2 rounded">
+                    <i class="fas fa-book-medical me-2"></i>
+                    <span>知识库管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-project-diagram me-2"></i>
+                    <span>知识图谱管理</span>
+                </a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title text-uppercase small text-muted mb-2">系统设置</div>
+                <a href="#" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-cog me-2"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link d-block p-2 rounded">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="top-nav bg-light shadow-sm p-3 d-flex justify-content-between align-items-center">
+            <div class="search-box bg-white rounded-pill px-3 py-1 d-flex align-items-center">
+                <i class="fas fa-search text-muted me-2"></i>
+                <input type="text" class="border-0 bg-transparent w-100" placeholder="搜索知识文档...">
+            </div>
+
+            <div class="user-info d-flex align-items-center">
+                <div class="notification position-relative me-4">
+                    <i class="fas fa-bell fa-lg"></i>
+                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">3</span>
+                </div>
+                <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                     style="width: 40px; height: 40px;">管
+                </div>
+                <div class="user-details">
+                    <div class="user-name fw-bold">管理员</div>
+                    <div class="user-role small text-muted">系统管理员</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 知识库内容区域 -->
+        <div class="knowledge-content p-4">
+            <div class="content-header d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-1">健康知识库管理</h1>
+                    <p class="text-muted mb-0">上传和管理健康知识文档，构建智能知识库</p>
+                </div>
+                <button class="btn btn-primary" id="addDocumentBtn">
+                    <i class="fas fa-plus-circle me-2"></i>新增文档
+                </button>
+            </div>
+
+            <!-- 知识库文件列表 -->
+            <div class="knowledge-files mt-4 bg-white rounded shadow-sm p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                        <tr>
+                            <th>文档名称</th>
+                            <th>类型</th>
+                            <th>标签</th>
+                            <th>上传时间</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for doc in knowledge_docs %}
+                        <tr>
+                            <!-- 在文档列表中添加文件类型标识 -->
+                            <td>
+                                <i class="fas fa-file me-2"></i> {{ doc.name }}
+                                {% if doc.type == "file" %}
+                                {% set file_ext = doc.path.split('.')[-1].lower() %}
+                                <span class="file-type-tag file-type-{{ file_ext }}">
+            .{{ file_ext }}
+        </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.type == "file" %}
+                                <span class="badge bg-primary">文件</span>
+                                {% else %}
+                                <span class="badge bg-info">URL</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.tags %}
+                                {% for tag in doc.tags.split(',') %}
+                                <span class="badge-tag">{{ tag }}</span>
+                                {% endfor %}
+                                {% else %}
+                                <span class="text-muted">无标签</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ doc.created_at }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary btn-action edit-doc"
+                                        data-id="{{ doc.id }}"
+                                        data-name="{{ doc.name }}"
+                                        data-type="{{ doc.type }}"
+                                        data-path="{{ doc.path }}"
+                                        data-tags="{{ doc.tags }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success btn-action vectorize-doc"
+                                        data-id="{{ doc.id }}"
+                                        data-name="{{ doc.name }}">
+                                    <i class="fas fa-brain"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-action delete-doc"
+                                        data-id="{{ doc.id }}"
+                                        data-name="{{ doc.name }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-file-excel fa-2x mb-3"></i>
+                                <p>知识库中没有文档</p>
+                                <button class="btn btn-sm btn-primary mt-2" id="addFirstDocumentBtn">
+                                    <i class="fas fa-plus me-1"></i>添加第一个文档
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 向量数据库状态 -->
+            <div class="vector-db-status bg-white rounded shadow-sm p-4 mt-4">
+                <h2 class="mb-4"><i class="fas fa-database me-2"></i> 向量数据库状态</h2>
+
+                <div class="stats-grid row">
+                    <div class="stat-card col-md-3 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-light-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-file-alt fa-lg text-primary"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="mb-0">{{ vector_db_stats.get('document_count', 'N/A') }}</h3>
+                                <p class="text-muted mb-0">文档数量</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card col-md-3 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-light-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-cube fa-lg text-primary"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="mb-0">{{ vector_db_stats.get('chunk_size', 'N/A') }}</h3>
+                                <p class="text-muted mb-0">分块大小</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card col-md-3 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-light-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-microchip fa-lg text-primary"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="mb-0">{{ vector_db_stats.get('embedding_model', 'N/A') }}</h3>
+                                <p class="text-muted mb-0">嵌入模型</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card col-md-3 mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-light-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-check-circle fa-lg text-primary"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 class="mb-0">{{ vector_db_stats.get('status', 'N/A') }}</h3>
+                                <p class="text-muted mb-0">数据库状态</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vectorization-output bg-white rounded shadow-sm p-4 mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0"><i class="fas fa-terminal me-2"></i> 向量化处理输出</h2>
+                    <button class="btn btn-outline-secondary" id="clearOutput">
+                        <i class="fas fa-trash me-1"></i> 清空输出
+                    </button>
+                </div>
+
+                <div class="output-container bg-dark text-light p-3 rounded" id="vectorOutput"
+                     style="height: 300px; overflow-y: auto;">
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-3"></i>
+                        <p>选择文档并点击"向量化"按钮开始处理</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 重构后的文档模态框 -->
+<div class="modal fade" id="documentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitle">新增文档</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 文档类型选择器 -->
+                <div class="document-type-tabs mb-4">
+                    <div class="document-type-tab active" data-type="file">
+                        <i class="fas fa-file-upload me-2"></i>上传本地文档
+                    </div>
+                    <div class="document-type-tab" data-type="url">
+                        <i class="fas fa-link me-2"></i>添加在线文档
+                    </div>
+                </div>
+
+                <!-- 文件上传表单 -->
+                <div class="document-form-section active" id="fileFormSection">
+                    <!-- 文件上传区域 -->
+                    <!-- 在文件上传区域添加文件类型提示 -->
+                    <div class="upload-area mb-4 p-4 border rounded" id="dropArea">
+                        <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                        <p class="mb-2 fw-bold">拖放文件到此处或点击上传</p>
+                        <p class="small text-muted mb-3">
+                            支持格式:
+                            <span class="badge bg-primary">PDF</span>
+                            <span class="badge bg-primary">DOC</span>
+                            <span class="badge bg-primary">DOCX</span>
+                            <span class="badge bg-primary">TXT</span>
+                            <span class="badge bg-primary">MD</span>
+                        </p>
+                        <input type="file" id="fileInput" name="file" class="d-none" accept=".pdf,.doc,.docx,.txt,.md">
+                        <button type="button" class="btn btn-outline-primary" id="selectFileBtn">
+                            <i class="fas fa-folder-open me-2"></i>选择文件
+                        </button>
+                    </div>
+
+                    <!-- 文件信息显示 -->
+                    <div id="fileInfo" class="d-none mt-3 p-3 bg-light rounded border">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 id="fileName" class="mb-1"></h6>
+                                <small id="fileSize" class="text-muted"></small>
+                            </div>
+                            <button type="button" id="removeFile"
+                                    class="btn btn-sm btn-link text-danger">
+                                <i class="fas fa-times"></i> 移除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 文档名称输入 -->
+                    <div class="mb-3">
+                        <label for="fileDocumentName" class="form-label fw-bold">
+                            <i class="fas fa-file-signature me-2"></i>文档名称 *
+                        </label>
+                        <input type="text" class="form-control form-control-lg"
+                               id="fileDocumentName" placeholder="输入文档名称" required>
+                    </div>
+
+                    <!-- 标签输入 -->
+                    <div class="mb-4">
+                        <label for="fileTags" class="form-label fw-bold">
+                            <i class="fas fa-tags me-2"></i>文档标签
+                        </label>
+                        <input type="text" class="form-control"
+                               id="fileTags" placeholder="例如：高血压,糖尿病,饮食指南">
+                        <div class="form-text">多个标签用逗号分隔</div>
+                    </div>
+                </div>
+
+                <!-- URL表单 -->
+                <div class="document-form-section" id="urlFormSection">
+                    <!-- 文档名称输入 -->
+                    <div class="mb-3">
+                        <label for="urlDocumentName" class="form-label fw-bold">
+                            <i class="fas fa-file-signature me-2"></i>文档名称 *
+                        </label>
+                        <input type="text" class="form-control form-control-lg"
+                               id="urlDocumentName" placeholder="输入文档名称" required>
+                    </div>
+
+                    <!-- URL输入 -->
+                    <div class="mb-3">
+                        <label for="urlLink" class="form-label fw-bold">
+                            <i class="fas fa-link me-2"></i>文档URL *
+                        </label>
+                        <input type="url" class="form-control"
+                               id="urlLink" placeholder="https://example.com/document.pdf" required>
+                        <div class="form-text">请输入完整的文档URL地址</div>
+                    </div>
+
+                    <!-- 标签输入 -->
+                    <div class="mb-4">
+                        <label for="urlTags" class="form-label fw-bold">
+                            <i class="fas fa-tags me-2"></i>文档标签
+                        </label>
+                        <input type="text" class="form-control"
+                               id="urlTags" placeholder="例如：高血压,糖尿病,饮食指南">
+                        <div class="form-text">多个标签用逗号分隔</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" id="saveDocumentBtn">
+                    <i class="fas fa-save me-2"></i>保存文档
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 调整 JS 加载顺序 -->
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/knowledge.js') }}"></script>
+{% endblock %}

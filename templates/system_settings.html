@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/system_settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container d-flex">
+    <!-- 侧边导航 -->
+    <div class="sidebar">
+        <div class="sidebar-header p-3">
+            <div class="hospital-logo d-flex align-items-center">
+                <i class="fas fa-book-medical fa-2x me-2"></i>
+                <h2 class="mb-0">健康知识平台</h2>
+            </div>
+        </div>
+
+        <div class="nav-links p-3">
+            <div class="nav-group mb-4">
+                <div class="nav-title text-uppercase small text-muted mb-2">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-user-injured me-2"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-book-medical me-2"></i>
+                    <span>知识库管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link d-block p-2 mb-2 rounded">
+                    <i class="fas fa-project-diagram me-2"></i>
+                    <span>知识图谱管理</span>
+                </a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-title text-uppercase small text-muted mb-2">系统设置</div>
+                <a href="{{ url_for('system_settings') }}" class="nav-link active d-block p-2 mb-2 rounded">
+                    <i class="fas fa-cog me-2"></i>
+                    <span>系统设置</span>
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link d-block p-2 rounded">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span>退出登录</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="top-nav bg-light shadow-sm p-3 d-flex justify-content-between align-items-center">
+            <div class="search-box bg-white rounded-pill px-3 py-1 d-flex align-items-center">
+                <i class="fas fa-search text-muted me-2"></i>
+                <input type="text" class="border-0 bg-transparent w-100" placeholder="搜索配置项...">
+            </div>
+
+            <div class="user-info d-flex align-items-center">
+                <div class="notification position-relative me-4">
+                    <i class="fas fa-bell fa-lg"></i>
+                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle">3</span>
+                </div>
+                <div class="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                     style="width: 40px; height: 40px;">管
+                </div>
+                <div class="user-details">
+                    <div class="user-name fw-bold">管理员</div>
+                    <div class="user-role small text-muted">系统管理员</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统设置内容区域 -->
+        <div class="system-settings p-4">
+            <div class="content-header d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-1">系统设置</h1>
+                    <p class="text-muted mb-0">管理系统配置参数</p>
+                </div>
+                <button class="btn btn-success" id="saveSettingsBtn">
+                    <i class="fas fa-save me-2"></i>保存设置
+                </button>
+            </div>
+
+            <!-- 配置分组 -->
+            <div class="config-groups">
+                <!-- 数据库配置 -->
+                <div class="config-group bg-white rounded shadow-sm p-4 mb-4">
+                    <h3 class="mb-4 border-bottom pb-2">
+                        <i class="fas fa-database me-2 text-primary"></i>数据库配置
+                    </h3>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="vectorDbType" class="form-label">向量数据库类型</label>
+                                <select class="form-select" id="vectorDbType" name="VECTOR_DB_TYPE">
+                                    <option value="Chroma">Chroma</option>
+                                    <option value="FAISS">FAISS</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="vectorDbPath" class="form-label">向量数据库路径</label>
+                                <input type="text" class="form-control" id="vectorDbPath" name="VECTOR_DB_PATH">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="graphDbType" class="form-label">图数据库类型</label>
+                                <select class="form-select" id="graphDbType" name="GRAPH_DB_TYPE">
+                                    <option value="Neo4j">Neo4j</option>
+                                    <option value="Nebula">Nebula</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="neo4jUri" class="form-label">Neo4j URI</label>
+                                <input type="text" class="form-control" id="neo4jUri" name="NEO4J_URI">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="neo4jUser" class="form-label">Neo4j 用户名</label>
+                                <input type="text" class="form-control" id="neo4jUser" name="NEO4J_USER">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="neo4jPassword" class="form-label">Neo4j 密码</label>
+                                <input type="password" class="form-control" id="neo4jPassword" name="NEO4J_PASSWORD">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 大模型配置 -->
+                <div class="config-group bg-white rounded shadow-sm p-4 mb-4">
+                    <h3 class="mb-4 border-bottom pb-2">
+                        <i class="fas fa-brain me-2 text-info"></i>大模型配置
+                    </h3>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="llmProvider" class="form-label">大模型提供商</label>
+                                <select class="form-select" id="llmProvider" name="LLM_PROVIDER">
+                                    <option value="DeepSeek">DeepSeek</option>
+                                    <option value="Tongyi">通义千问</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="deepseekApi" class="form-label">DeepSeek API</label>
+                                <input type="text" class="form-control" id="deepseekApi" name="DEEPSEEK_API">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="deepseekKey" class="form-label">DeepSeek API密钥</label>
+                                <input type="password" class="form-control" id="deepseekKey" name="DEEPSEEK_KEY">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="tongyiApi" class="form-label">通义千问 API</label>
+                                <input type="text" class="form-control" id="tongyiApi" name="TONGYI_API">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="tongyiKey" class="form-label">通义千问 API密钥</label>
+                                <input type="password" class="form-control" id="tongyiKey" name="TONGYI_KEY">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="guijiKey" class="form-label">硅基流动 API密钥</label>
+                                <input type="password" class="form-control" id="guijiKey" name="GUIJI_KEY">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文件处理配置 -->
+                <div class="config-group bg-white rounded shadow-sm p-4 mb-4">
+                    <h3 class="mb-4 border-bottom pb-2">
+                        <i class="fas fa-file-alt me-2 text-warning"></i>文件处理配置
+                    </h3>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="externalFile" class="form-label">外挂文档路径</label>
+                                <input type="text" class="form-control" id="externalFile" name="EXTERNAL_FILE">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="documentsDir" class="form-label">文档存储目录</label>
+                                <input type="text" class="form-control" id="documentsDir" name="DOCUMENTS_DIR">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="sqliteDbPath" class="form-label">SQLite数据库路径</label>
+                                <input type="text" class="form-control" id="sqliteDbPath" name="SQLITE_DB_PATH">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="allowedExtensions" class="form-label">允许的文件扩展名</label>
+                                <input type="text" class="form-control" id="allowedExtensions" name="ALLOWED_EXTENSIONS">
+                                <small class="form-text text-muted">多个扩展名用逗号分隔 (例如: txt,pdf,docx)</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="chunkSize" class="form-label">文本分块大小</label>
+                                <input type="number" class="form-control" id="chunkSize" name="CHUNK_SIZE" min="100" max="5000">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="chunkOverlap" class="form-label">文本分块重叠大小</label>
+                                <input type="number" class="form-control" id="chunkOverlap" name="CHUNK_OVERLAP" min="0" max="500">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="vectorTopK" class="form-label">向量检索返回数量</label>
+                                <input type="number" class="form-control" id="vectorTopK" name="VECTOR_TOP_K" min="1" max="50">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label for="graphTopK" class="form-label">图检索返回数量</label>
+                                <input type="number" class="form-control" id="graphTopK" name="GRAPH_TOP_K" min="1" max="50">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 嵌入模型配置 -->
+                <div class="config-group bg-white rounded shadow-sm p-4">
+                    <h3 class="mb-4 border-bottom pb-2">
+                        <i class="fas fa-cubes me-2 text-success"></i>嵌入模型配置
+                    </h3>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="embeddingUrl" class="form-label">嵌入模型URL</label>
+                                <input type="text" class="form-control" id="embeddingUrl" name="EMBEDDING_URL">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label for="embeddingModel" class="form-label">嵌入模型名称</label>
+                                <input type="text" class="form-control" id="embeddingModel" name="EMBEDDING_MODEL">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 加载配置数据
+    fetch('/admin/system_settings/config')
+        .then(response => response.json())
+        .then(config => {
+            // 填充表单
+            for (const [key, value] of Object.entries(config)) {
+                const element = document.querySelector(`[name="${key}"]`);
+                if (element) {
+                    if (Array.isArray(value)) {
+                        element.value = value.join(',');
+                    } else {
+                        element.value = value;
+                    }
+
+                    // 特殊处理下拉框
+                    if (element.tagName === 'SELECT') {
+                        element.value = value;
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('加载配置失败:', error);
+            Swal.fire('错误', '加载配置失败，请刷新页面重试', 'error');
+        });
+
+    // 保存设置按钮点击事件
+    document.getElementById('saveSettingsBtn').addEventListener('click', function() {
+        const formData = {};
+        document.querySelectorAll('input, select').forEach(element => {
+            if (element.name) {
+                formData[element.name] = element.value;
+            }
+        });
+
+        // 显示加载中
+        const saveBtn = this;
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+        saveBtn.disabled = true;
+
+        // 发送更新请求
+        fetch('/admin/system_settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire('成功', '系统设置已保存', 'success');
+            } else {
+                Swal.fire('错误', data.error || '保存失败', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('保存配置失败:', error);
+            Swal.fire('错误', '保存配置失败，请重试', 'error');
+        })
+        .finally(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,336 @@
+/* 知识图谱管理页面样式 - 简化版 */
+.kg-control-panel {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.kg-input-group {
+    display: flex;
+    margin-bottom: 15px;
+}
+
+.kg-input-group textarea {
+    flex: 1;
+    height: 100px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.kg-input-group textarea:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.kg-input-group button {
+    margin-left: 15px;
+    align-self: flex-end;
+    padding: 10px 20px;
+}
+
+.kg-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.kg-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.kg-stats span {
+    display: flex;
+    align-items: center;
+}
+
+.kg-stats i {
+    margin-right: 5px;
+    font-size: 16px;
+}
+
+.kg-visualization-container {
+    position: relative;
+    height: 70vh;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+#kg-network-container {
+    width: 100%;
+    height: 100%;
+}
+
+.kg-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 10px 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 300px;
+    z-index: 10;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.person { background-color: #FF9AA2; }
+.organization { background-color: #FFB7B2; }
+.location { background-color: #FFDAC1; }
+.event { background-color: #E2F0CB; }
+.concept { background-color: #B5EAD7; }
+.technology { background-color: #C7CEEA; }
+.disease { background-color: #9A7FAE; }
+.drug { background-color: #6A9C78; }
+
+.kg-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.kg-controls .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.kg-controls .btn-icon:hover {
+    background: #3498db;
+    color: white;
+}
+
+/* 节点详情面板 */
+.node-details-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 350px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    display: none;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.panel-content {
+    padding: 20px;
+}
+
+.node-title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.node-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.node-title h4 {
+    margin: 0;
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+.node-type {
+    background: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #6c757d;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.node-properties, .node-relations {
+    margin-bottom: 15px;
+}
+
+.node-properties h5, .node-relations h5 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #495057;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.properties-container, .relations-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+}
+
+.property-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.property-item:last-child {
+    border-bottom: none;
+}
+
+.property-key {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.property-value {
+    color: #495057;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.relation-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.relation-type {
+    font-weight: 500;
+    color: #3498db;
+    margin-right: 8px;
+}
+
+.relation-direction {
+    font-weight: bold;
+    margin: 0 5px;
+    color: #e74c3c;
+}
+
+.related-node {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.no-properties, .no-relations {
+    text-align: center;
+    padding: 15px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    margin: 20px auto;
+    width: 50px;
+    height: 50px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 空图谱提示 */
+.empty-graph-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    max-width: 500px;
+}
+
+.empty-graph-message i {
+    font-size: 64px;
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.empty-graph-message h3 {
+    margin: 15px 0;
+    color: #343a40;
+}
+
+.empty-graph-message p {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.empty-graph-message button {
+    margin-top: 10px;
+}

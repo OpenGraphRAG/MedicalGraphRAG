@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="register-container">
+    <div class="register-box">
+        <div class="register-header">
+            <i class="fas fa-user-plus"></i>
+            <h1>用户注册</h1>
+        </div>
+
+        <form class="register-form" method="POST" action="{{ url_for('register') }}">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <div class="form-section">
+                <h3>基本信息</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">姓名</label>
+                        <input type="text" id="name" name="name" placeholder="请输入真实姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">手机号</label>
+                        <input type="tel" id="phone" name="phone" placeholder="请输入手机号" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" id="password" name="password" placeholder="设置登录密码" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">确认密码</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="再次输入密码" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>健康信息（可选）</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">年龄</label>
+                        <input type="number" id="age" name="age" placeholder="请输入年龄">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">性别</label>
+                        <select id="gender" name="gender">
+                            <option value="">请选择性别</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="blood_type">血型</label>
+                        <select id="blood_type" name="blood_type">
+                            <option value="">请选择血型</option>
+                            <option value="A型">A型</option>
+                            <option value="B型">B型</option>
+                            <option value="O型">O型</option>
+                            <option value="AB型">AB型</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="height">身高</label>
+                        <input type="text" id="height" name="height" placeholder="例如：175cm">
+                    </div>
+                    <div class="form-group">
+                        <label for="weight">体重</label>
+                        <input type="text" id="weight" name="weight" placeholder="例如：70kg">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="conditions">健康状况</label>
+                        <input type="text" id="conditions" name="conditions" placeholder="例如：高血压、糖尿病等">
+                    </div>
+                    <div class="form-group">
+                        <label for="allergies">过敏史</label>
+                        <input type="text" id="allergies" name="allergies" placeholder="例如：青霉素、花粉等">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn">立即注册</button>
+
+            <div class="register-footer">
+                <p>已有账号？<a href="{{ url_for('login') }}">立即登录</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 手机号输入验证
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').substring(0, 11);
+    });
+
+    // 密码一致性验证
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+
+    function validatePassword() {
+        if (password.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('两次输入的密码不一致');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+
+    password.onchange = validatePassword;
+    confirmPassword.onkeyup = validatePassword;
+});
+</script>
+{% endblock %}

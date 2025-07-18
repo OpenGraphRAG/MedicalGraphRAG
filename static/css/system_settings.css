@@ -1,0 +1,63 @@
+/* 系统设置页面专用样式 */
+.system-settings {
+    background: #f8f9fa;
+    min-height: calc(100vh - 120px);
+}
+
+.config-group {
+    border-left: 4px solid #4db3d3;
+    transition: all 0.3s ease;
+}
+
+.config-group:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.config-group h3 {
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4db3d3;
+    box-shadow: 0 0 0 0.2rem rgba(77, 179, 211, 0.25);
+}
+
+#saveSettingsBtn {
+    padding: 10px 25px;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+
+#saveSettingsBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+
+#saveSettingsBtn:disabled {
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+}
