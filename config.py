@@ -23,14 +23,14 @@ class Config:
         "DEEPSEEK_API": "https://api.deepseek.cn/v1/chat/completions",
         "DEEPSEEK_KEY": "your_api_key",
         "TONGYI_API": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
-        "TONGYI_KEY": "sk-5088f30c391a401694c1368461f02029",
+        "TONGYI_KEY": "",
 
         # 知识图谱配置
         "KNOWLEDGE_INDEX": "knowledge_index/kg_vector_index.pkl",
         "KG_SCHEMA": "schema/kg_schema.json",
 
         # 其他API密钥
-        "GUIJI_KEY": "sk-nnvjbygjudokdoiuhklskuvzwormyaxdpjstjwmtqgedmcxr",
+        "GUIJI_KEY": "",
 
         # 文件路径配置
         "EXTERNAL_FILE": "documents",
