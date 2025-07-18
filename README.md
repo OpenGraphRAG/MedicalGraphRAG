@@ -1,14 +1,26 @@
 # MedicalGraphRAG 项目文档
 
-## 一、项目概述
+## 一、📖 项目简介
+
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg)](https://flask.palletsprojects.com/)
+[![Neo4j](https://img.shields.io/badge/Neo4j-4.4+-orange.svg)](https://neo4j.com/)
+[![License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
 
 MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）技术的项目，旨在提供高效、准确的医学知识服务。项目通过整合医学文献、临床指南和病例报告等多源数据，构建结构化的知识图谱，并利用大模型实现智能问答和辅助决策支持
+
+### 🎯 核心功能
+- 📊 患者健康档案管理：完整的健康画像维护
+- 🧠 知识图谱构建：基于Neo4j的可视化知识图谱
+- 📚 向量知识库：支持多格式文档的智能检索
+- 🤖 AI知识推送：个性化健康知识生成
+- ⚡ 实时向量化：WebSocket推送处理状态
 
 ## 二、系统架构
 
 ### 2.1 整体架构图
 
-![image-20250719005833406](/var/folders/1w/p2nfkn8d6kn19tbtffqlwcl40000gn/T/abnerworks.Typora/image-20250719005833406.png)
+![image-20250719011234711](/var/folders/1w/p2nfkn8d6kn19tbtffqlwcl40000gn/T/abnerworks.Typora/image-20250719011234711.png)
 
 ### 2.2 技术栈
 
