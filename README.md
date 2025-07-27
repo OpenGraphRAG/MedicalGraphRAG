@@ -39,6 +39,8 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 - **向量检索**：基于 FAISS 的相似度检索
 - **大模型**：阿里云通义大模型 API
 - **部署**：Docker、Nginx
+### 2.3 demo
+<img width="2864" height="1432" alt="image" src="https://github.com/user-attachments/assets/15de2c87-c284-4969-bb27-df4a48b47b1d" />
 
 ## 三、快速开始
 
