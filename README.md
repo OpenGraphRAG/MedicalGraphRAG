@@ -254,3 +254,5 @@ server {
 ## 十、许可证
 
 本项目采用 Apache License 2.0 许可证，详情见LICENSE文件。
+
+[![Stargazers repo roster for @OpenGraphRAG/MedicalGraphRAG.git](https://reporoster.com/stars/OpenGraphRAG/MedicalGraphRAG.git)](https://github.com/OpenGraphRAG/MedicalGraphRAG.git/stargazers)
