@@ -1,5 +1,6 @@
 # MedicalGraphRAG 项目文档
-
+## 感谢各位starter
+[![Stargazers repo roster for @OpenGraphRAG/MedicalGraphRAG](https://reporoster.com/stars/OpenGraphRAG/MedicalGraphRAG)](https://github.com/OpenGraphRAG/MedicalGraphRAG/stargazers)
 ## 一、📖 项目简介
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
