@@ -29,7 +29,56 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 ## 二、系统架构
 
 ### 2.1 整体架构图
-
+layeredGraph
+    title MedicalGraphRAG 系统架构设计（可编辑版）
+    %% ===================== 1. 前端应用层 =====================
+    layer 前端应用层 [前端应用层 - 用户交互入口]
+        component 患者端模块 [患者端\n• 健康画像（20+维度卡片/BMI自动计算）\n• AI知识推送（赛博朋克输入框/Markdown渲染）\n• 就诊记录时间轴]
+        component 管理端模块 [管理端\n• 患者列表（分页/一键编辑/预览）\n• 知识图谱（Vis.js可视化/拖拽缩放/路径查询）\n• 文档管理（文件/URL上传/向量化进度条）]
+        tech 前端技术栈 [核心技术\nHTML5/CSS3/JavaScript\nTailwind CSS（样式）\nVis.js（图谱可视化）]
+    
+    %% ===================== 2. 通信与网关层 =====================
+    layer 通信与网关层 [通信与网关层 - 请求路由]
+        component Nginx服务 [Nginx\n• 反向代理（转发前端请求）\n• 负载均衡（水平扩展支撑）\n• 静态资源缓存]
+        component 实时通信协议 [实时通信\n• HTTP/HTTPS（常规接口）\n• WebSocket（向量化状态推送）]
+        tech 网关技术栈 [核心技术\nNginx 1.20+\nWebSocket协议标准]
+    
+    %% ===================== 3. 后端核心服务层 =====================
+    layer 后端核心服务层 [后端核心服务层 - 业务逻辑中枢]
+        component Flask主应用 [Flask主应用（app.py）\n• 路由注册与请求分发\n• 全局配置加载（关联config.py）\n• 跨域与权限拦截]
+        component RAG核心模块 [RAG系统（rag_system.py）\n• 检索增强生成（向量+图谱双检索）\n• 多轮对话上下文管理\n• 回答证据溯源匹配]
+        component 知识图谱模块 [知识图谱（knowledge_graph.py）\n• 实体识别（疾病/症状/药物，准确率92.7%）\n• 关系抽取（治疗/导致/关联，准确率89.5%）\n• Neo4j图谱CRUD操作]
+        component 文档处理模块 [文档处理（隐含模块）\n• 多格式解析（PDF/Word/TXT）\n• 文本清洗与分词（依赖nltk_data）\n• 文档版本控制与标签管理]
+        component 向量检索服务 [向量服务（vector_db.py）\n• FAISS相似度检索（响应<2.3s）\n• 实时向量化处理\n• 向量索引维护（data/indexes）]
+        component 患者档案模块 [档案管理（models.py支撑）\n• 健康画像CRUD（20+维度）\n• BMI自动计算\n• 就诊记录时间轴维护]
+        tech 后端技术栈 [核心技术\nPython 3.8+/Flask 2.3+\nNLTK（文本处理）\nFAISS（向量检索）]
+    
+    %% ===================== 4. 数据存储层 =====================
+    layer 数据存储层 [数据存储层 - 多类型数据分离]
+        component 图数据库 [Neo4j 4.4+\n• 存储医学实体/关系\n• 支持最短路径查询\n• 支撑百万级实体扩展]
+        component 元数据数据库 [SQLite\n• 患者档案元数据\n• 文档标签/版本信息\n• 用户权限数据（管理员/患者）]
+        component 向量数据库 [FAISS\n• 文档向量索引存储\n• 相似度检索引擎\n• 支撑50 QPS吞吐量]
+        component 文件存储 [本地存储（data/目录）\n• 原始文档（data/documents）\n• 向量索引文件（data/indexes）\n• 支持最大100MB PDF]
+        tech 存储技术栈 [核心技术\nNeo4j 4.4+/SQLite 3.30+\nFAISS 1.7.4+]
+    
+    %% ===================== 5. 第三方AI服务层 =====================
+    layer 第三方AI服务层 [第三方AI服务层 - 大模型支撑]
+        component 通义大模型API [阿里云通义大模型\n• 个性化健康知识生成\n• 智能问答内容优化\n• 自然语言理解（NLU）]
+        tech AI服务配置 [调用依赖\nDASHSCOPE_API_KEY（.env文件）\nAPI请求频率控制（config.py）]
+    
+    %% ===================== 6. 部署运维层 =====================
+    layer 部署运维层 [部署运维层 - 环境与运维]
+        component 容器化部署 [Docker/Docker-Compose\n• 应用环境隔离\n• 一键部署（docker-compose up -d）\n• 多实例扩展支撑]
+        component 配置管理 [配置文件\n• .env（敏感信息：API密钥/数据库密码）\n• config.py（系统参数：端口/向量维度）\n• requirements.txt（依赖列表）]
+        component 初始化脚本 [manage.py\n• SQLite数据库表结构初始化\n• Neo4j知识图谱初始化\n• 测试数据生成（可选）]
+        tech 运维工具 [核心工具\nDocker 20.10+/Docker-Compose 2.10+\nGit（版本控制）]
+    
+    %% ===================== 层级依赖关系 =====================
+    前端应用层 --> 通信与网关层 : 发起HTTP/WebSocket请求
+    通信与网关层 --> 后端核心服务层 : 转发请求/负载均衡
+    后端核心服务层 --> 数据存储层 : 读写数据/向量检索/图谱查询
+    后端核心服务层 --> 第三方AI服务层 : 调用大模型生成内容
+    部署运维层 --> 所有层级 : 环境支撑/部署/初始化
 ![image-20250719011234711](/var/folders/1w/p2nfkn8d6kn19tbtffqlwcl40000gn/T/abnerworks.Typora/image-20250719011234711.png)
 
 ### 2.2 技术栈
