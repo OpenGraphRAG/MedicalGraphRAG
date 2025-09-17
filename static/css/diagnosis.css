@@ -1,12 +1,12 @@
-/* 赛博朋克医疗风 - 打字机+Markdown渲染 */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+/* 赛博朋克医疗风 —— 全面美化版 */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap');
 
 :root {
   --primary: #00f5ff;
   --secondary: #ff00ff;
   --bg-dark: #0a0a1a;
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.2);
   --text: #e0f0ff;
   --text-dim: #8a9ba8;
   --radius: 20px;
@@ -30,8 +30,8 @@ body {
 }
 .grid-overlay {
   background-image:
-    linear-gradient(rgba(0, 245, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 245, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(0,245,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -43,7 +43,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 20px 40px;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,.4);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
 }
@@ -55,7 +55,8 @@ body {
   font-size: 1.1rem;
   transition: color .3s;
 }
-.nav-links a.active, .nav-links a:hover { color: var(--primary); }
+.nav-links a.active,
+.nav-links a:hover { color: var(--primary); }
 
 /* 主标题 */
 .neon-title {
@@ -83,6 +84,7 @@ body {
   backdrop-filter: blur(20px);
   max-width: 900px;
   margin: 0 auto 60px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
 }
 
 /* 输入区 */
@@ -96,7 +98,7 @@ body {
 #userInputText {
   width: 100%;
   min-height: 120px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,.05);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 16px;
@@ -107,11 +109,17 @@ body {
 }
 #userInputText:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 10px var(--primary);
+  box-shadow: 0 0 0 2px var(--primary), 0 0 20px var(--primary);
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0,245,255,.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(0,245,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,245,255,0); }
 }
 .char-count {
   text-align: right;
-  font-size: 0.9rem;
+  font-size: .9rem;
   color: var(--text-dim);
   margin-top: 5px;
 }
@@ -119,18 +127,42 @@ body {
 /* 按钮 */
 .action-area { display: flex; justify-content: center; }
 .cyber-btn {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 48px; font-size: 1.3rem; font-weight: 700;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 48px;
+  font-size: 1.3rem;
+  font-weight: 700;
   background: linear-gradient(90deg, var(--primary), var(--secondary));
-  border: none; border-radius: 50px; color: #000;
-  cursor: pointer; box-shadow: 0 0 15px var(--primary); transition: .3s;
+  border: none;
+  border-radius: 50px;
+  color: #000;
+  cursor: pointer;
+  box-shadow: 0 0 15px var(--primary);
+  transition: .3s;
 }
+.cyber-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+  transition: left .6s;
+}
+.cyber-btn:hover::after { left: 100%; }
 .cyber-btn:hover {
   box-shadow: 0 0 25px var(--primary), 0 0 25px var(--secondary);
   transform: translateY(-2px);
 }
 .cyber-btn:disabled {
-  opacity: 0.5; cursor: not-allowed;
+  opacity: .5;
+  cursor: not-allowed;
+}
+.cyber-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 0 15px var(--primary);
 }
 
 /* 输出区 */
@@ -140,7 +172,8 @@ body {
   width: 24px; height: 24px;
   border: 3px solid var(--glass-border);
   border-top: 3px solid var(--primary);
-  border-radius: 50%; animation: spin 1s linear infinite;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -151,15 +184,17 @@ body {
   font-size: 1.15rem;
   line-height: 1.8;
 }
-.markdown-body h1, .markdown-body h2, .markdown-body h3 { color: var(--primary); }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 { color: var(--primary); }
 .markdown-body code {
-  background: rgba(0, 245, 255, 0.1);
+  background: rgba(0,245,255,.1);
   padding: 2px 6px;
   border-radius: 4px;
   color: var(--secondary);
 }
 .markdown-body pre {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0,0,0,.4);
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
@@ -168,4 +203,15 @@ body {
   border-left: 4px solid var(--secondary);
   padding-left: 16px;
   color: var(--text-dim);
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,.05); }
+::-webkit-scrollbar-thumb { background: linear-gradient(var(--primary), var(--secondary)); border-radius: 3px; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .glass { padding: 25px; }
+  .neon-title { font-size: 2.2rem; }
 }

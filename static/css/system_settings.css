@@ -1,63 +1,96 @@
-/* 系统设置页面专用样式 */
-.system-settings {
-    background: #f8f9fa;
-    min-height: calc(100vh - 120px);
+/* 系统设置页面样式 */
+.settings-container {
+  background: rgba(26, 26, 46, 0.6);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 25px;
+  margin-bottom: 25px;
+  animation: slideUp 0.5s ease;
 }
 
-.config-group {
-    border-left: 4px solid #4db3d3;
-    transition: all 0.3s ease;
+.settings-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.config-group:hover {
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+.settings-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
-.config-group h3 {
-    color: #2c3e50;
-    display: flex;
-    align-items: center;
+.settings-section h3 {
+  color: var(--accent-4);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-section h3 i {
+  font-size: 20px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+  margin-bottom: 15px;
 }
 
-.form-label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-    display: block;
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--accent-4);
 }
 
-.form-control, .form-select {
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    padding: 10px 15px;
-    font-size: 15px;
-    transition: all 0.2s ease;
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 14px;
+  transition: all 0.3s ease;
 }
 
-.form-control:focus, .form-select:focus {
-    border-color: #4db3d3;
-    box-shadow: 0 0 0 0.2rem rgba(77, 179, 211, 0.25);
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-4);
+  box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.2);
 }
 
-#saveSettingsBtn {
-    padding: 10px 25px;
-    font-size: 16px;
-    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease;
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
-#saveSettingsBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#saveSettingsBtn:disabled {
-    opacity: 0.7;
-    transform: none;
-    box-shadow: none;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-actions {
+    flex-direction: column;
+  }
+
+  .settings-actions .btn {
+    width: 100%;
+  }
 }

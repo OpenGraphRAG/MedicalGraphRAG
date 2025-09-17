@@ -1,134 +1,555 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="register-container">
-    <div class="register-box">
-        <div class="register-header">
-            <i class="fas fa-user-plus"></i>
-            <h1>用户注册</h1>
-        </div>
-
-        <form class="register-form" method="POST" action="{{ url_for('register') }}">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="flash-messages">
-                        {% for category, message in messages %}
-                            <div class="flash {{ category }}">{{ message }}</div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-
-            <div class="form-section">
-                <h3>基本信息</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="name">姓名</label>
-                        <input type="text" id="name" name="name" placeholder="请输入真实姓名" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="phone">手机号</label>
-                        <input type="tel" id="phone" name="phone" placeholder="请输入手机号" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="password">密码</label>
-                        <input type="password" id="password" name="password" placeholder="设置登录密码" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm_password">确认密码</label>
-                        <input type="password" id="confirm_password" name="confirm_password" placeholder="再次输入密码" required>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>健康信息（可选）</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="age">年龄</label>
-                        <input type="number" id="age" name="age" placeholder="请输入年龄">
-                    </div>
-                    <div class="form-group">
-                        <label for="gender">性别</label>
-                        <select id="gender" name="gender">
-                            <option value="">请选择性别</option>
-                            <option value="男">男</option>
-                            <option value="女">女</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="blood_type">血型</label>
-                        <select id="blood_type" name="blood_type">
-                            <option value="">请选择血型</option>
-                            <option value="A型">A型</option>
-                            <option value="B型">B型</option>
-                            <option value="O型">O型</option>
-                            <option value="AB型">AB型</option>
-                            <option value="其他">其他</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="height">身高</label>
-                        <input type="text" id="height" name="height" placeholder="例如：175cm">
-                    </div>
-                    <div class="form-group">
-                        <label for="weight">体重</label>
-                        <input type="text" id="weight" name="weight" placeholder="例如：70kg">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="conditions">健康状况</label>
-                        <input type="text" id="conditions" name="conditions" placeholder="例如：高血压、糖尿病等">
-                    </div>
-                    <div class="form-group">
-                        <label for="allergies">过敏史</label>
-                        <input type="text" id="allergies" name="allergies" placeholder="例如：青霉素、花粉等">
-                    </div>
-                </div>
-            </div>
-
-            <button type="submit" class="register-btn">立即注册</button>
-
-            <div class="register-footer">
-                <p>已有账号？<a href="{{ url_for('login') }}">立即登录</a></p>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 手机号输入验证
-    const phoneInput = document.getElementById('phone');
-    phoneInput.addEventListener('input', function() {
-        this.value = this.value.replace(/\D/g, '').substring(0, 11);
-    });
-
-    // 密码一致性验证
-    const password = document.getElementById('password');
-    const confirmPassword = document.getElementById('confirm_password');
-
-    function validatePassword() {
-        if (password.value !== confirmPassword.value) {
-            confirmPassword.setCustomValidity('两次输入的密码不一致');
-        } else {
-            confirmPassword.setCustomValidity('');
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康知识平台 - 注册</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-    }
 
-    password.onchange = validatePassword;
-    confirmPassword.onkeyup = validatePassword;
-});
-</script>
-{% endblock %}
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            position: relative;
+            overflow: hidden;
+            color: #333;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .register-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .register-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            animation: fadeIn 1s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            transform: translateZ(30px);
+        }
+
+        .register-header i {
+            font-size: 50px;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .register-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .register-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-section h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section h3::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            margin-left: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+        }
+
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .input-with-icon input, 
+        .input-with-icon select {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            outline: none;
+            appearance: none;
+        }
+
+        .input-with-icon input::placeholder,
+        .input-with-icon select option:first-child {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-with-icon input:focus,
+        .input-with-icon select:focus {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        .input-with-icon input:focus + i,
+        .input-with-icon select:focus + i {
+            color: #fff;
+            transform: scale(1.2);
+        }
+
+        .register-btn {
+            margin-top: 15px;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(37, 117, 252, 0.6);
+        }
+
+        .register-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(37, 117, 252, 0.4);
+        }
+
+        .register-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+            transform: translateY(100%);
+            transition: transform 0.4s ease;
+        }
+
+        .register-btn:hover::after {
+            transform: translateY(0);
+        }
+
+        .register-footer {
+            margin-top: 25px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .register-footer p {
+            margin: 10px 0;
+        }
+
+        .register-footer a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .register-footer a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #fff;
+            transition: width 0.3s ease;
+        }
+
+        .register-footer a:hover::after {
+            width: 100%;
+        }
+
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-align: center;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .flash.success {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+
+        .flash.error {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .register-container {
+                padding: 15px;
+            }
+            
+            .register-box {
+                padding: 30px 20px;
+            }
+            
+            .register-header h1 {
+                font-size: 24px;
+            }
+            
+            .input-with-icon input, 
+            .input-with-icon select {
+                padding: 12px 12px 12px 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    
+    <div class="register-container">
+        <div class="register-box">
+            <div class="register-header">
+                <i class="fas fa-user-plus"></i>
+                <h1>用户注册</h1>
+            </div>
+
+            <form class="register-form" method="POST" action="{{ url_for('register') }}">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <div class="form-section">
+                    <h3>基本信息</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">姓名</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="name" name="name" placeholder="请输入真实姓名" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">手机号</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                                <input type="tel" id="phone" name="phone" placeholder="请输入手机号" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="password" name="password" placeholder="设置登录密码" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">确认密码</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="confirm_password" name="confirm_password" placeholder="再次输入密码" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>健康信息（可选）</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">年龄</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-birthday-cake"></i>
+                                <input type="number" id="age" name="age" placeholder="请输入年龄">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">性别</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-venus-mars"></i>
+                                <select id="gender" name="gender">
+                                    <option value="">请选择性别</option>
+                                    <option value="男">男</option>
+                                    <option value="女">女</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="blood_type">血型</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-tint"></i>
+                                <select id="blood_type" name="blood_type">
+                                    <option value="">请选择血型</option>
+                                    <option value="A型">A型</option>
+                                    <option value="B型">B型</option>
+                                    <option value="O型">O型</option>
+                                    <option value="AB型">AB型</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="height">身高</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-ruler-vertical"></i>
+                                <input type="text" id="height" name="height" placeholder="例如：175cm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="weight">体重</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-weight"></i>
+                                <input type="text" id="weight" name="weight" placeholder="例如：70kg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="conditions">健康状况</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-heartbeat"></i>
+                                <input type="text" id="conditions" name="conditions" placeholder="例如：高血压、糖尿病等">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="allergies">过敏史</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-allergies"></i>
+                                <input type="text" id="allergies" name="allergies" placeholder="例如：青霉素、花粉等">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="register-btn">立即注册</button>
+
+                <div class="register-footer">
+                    <p>已有账号？<a href="{{ url_for('login') }}">立即登录</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        // 初始化粒子背景
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 80, density: { enable: true, value_area: 800 } },
+                    color: { value: "#ffffff" },
+                    shape: { type: "circle" },
+                    opacity: {
+                        value: 0.5,
+                        random: true,
+                        anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: { enable: true, speed: 2, size_min: 0.1, sync: false }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: "#ffffff",
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 1,
+                        direction: "none",
+                        random: true,
+                        straight: false,
+                        out_mode: "out",
+                        bounce: false,
+                        attract: { enable: false, rotateX: 600, rotateY: 1200 }
+                    }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: { enable: true, mode: "grab" },
+                        onclick: { enable: true, mode: "push" },
+                        resize: true
+                    },
+                    modes: {
+                        grab: { distance: 140, line_linked: { opacity: 1 } },
+                        push: { particles_nb: 4 }
+                    }
+                },
+                retina_detect: true
+            });
+
+            // 手机号输入验证
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').substring(0, 11);
+            });
+
+            // 密码一致性验证
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+
+            function validatePassword() {
+                if (password.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('两次输入的密码不一致');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+
+            password.onchange = validatePassword;
+            confirmPassword.onkeyup = validatePassword;
+
+            // 添加输入框聚焦效果
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('focus', () => {
+                    input.parentElement.classList.add('focused');
+                });
+                input.addEventListener('blur', () => {
+                    input.parentElement.classList.remove('focused');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

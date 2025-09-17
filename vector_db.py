@@ -8,7 +8,7 @@ from typing import List, Any, Optional, Callable
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import (
     TextLoader, PyPDFLoader, Docx2txtLoader, UnstructuredMarkdownLoader,
-    UnstructuredWordDocumentLoader  # 新增对 doc 文件的支持
+    UnstructuredWordDocumentLoader, UnstructuredFileLoader  # 新增通用文件加载器作为备选
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config import config
@@ -110,20 +110,54 @@ class VectorDBManager:
             # 支持更多文件类型
             file_ext = os.path.splitext(file_path)[1].lower()
 
-            if file_ext == '.pdf':
-                return PyPDFLoader(file_path).load()
-            elif file_ext in ['.docx', '.doc']:
-                # 统一处理 Word 文档
-                return UnstructuredWordDocumentLoader(file_path).load()
-            elif file_ext == '.md':
-                return UnstructuredMarkdownLoader(file_path).load()
-            elif file_ext == '.txt':
-                return TextLoader(file_path).load()
-            else:
-                print(f"⚠️ 不支持的文件类型: {file_path}")
+            # 检查文件是否存在且可读
+            if not os.path.exists(file_path):
+                print(f"文件不存在: {file_path}")
                 return []
+
+            if not os.access(file_path, os.R_OK):
+                print(f"文件不可读: {file_path}")
+                return []
+
+            # 尝试多种加载方式，增加容错性
+            loaders = []
+
+            if file_ext == '.pdf':
+                # 对于PDF，尝试多种加载器
+                loaders.append(("PyPDFLoader", lambda: PyPDFLoader(file_path).load()))
+                loaders.append(("UnstructuredPDFLoader", lambda: UnstructuredFileLoader(file_path).load()))
+            elif file_ext in ['.docx', '.doc']:
+                # 统一处理Word文档
+                loaders.append(
+                    ("UnstructuredWordDocumentLoader", lambda: UnstructuredWordDocumentLoader(file_path).load()))
+                loaders.append(("Docx2txtLoader", lambda: Docx2txtLoader(file_path).load()))
+            elif file_ext == '.md':
+                loaders.append(("UnstructuredMarkdownLoader", lambda: UnstructuredMarkdownLoader(file_path).load()))
+            elif file_ext == '.txt':
+                loaders.append(("TextLoader", lambda: TextLoader(file_path).load()))
+            else:
+                # 对于未知文件类型，尝试通用加载器
+                print(f"尝试使用通用加载器处理文件: {file_path}")
+                loaders.append(("UnstructuredFileLoader", lambda: UnstructuredFileLoader(file_path).load()))
+
+            # 尝试所有可用的加载器，直到有一个成功
+            for loader_name, loader_func in loaders:
+                try:
+                    print(f"尝试使用 {loader_name} 加载文件...")
+                    docs = loader_func()
+                    if docs and len(docs) > 0 and docs[0].page_content.strip():
+                        print(f"✅ 使用 {loader_name} 成功加载文件: {file_path}")
+                        return docs
+                except Exception as e:
+                    print(f"❌ {loader_name} 加载失败: {str(e)}")
+                    continue
+
+            print(f"⚠️ 所有加载器都无法处理文件: {file_path}")
+            return []
+
         except Exception as e:
             print(f"文件加载失败: {file_path}, 错误: {str(e)}")
+            traceback.print_exc()
             return []
 
     def update_from_files(self, file_pattern: str) -> bool:
@@ -133,12 +167,37 @@ class VectorDBManager:
         skipped_files = 0
 
         for file_path in glob.glob(file_pattern):
+            # 检查文件是否存在
+            if not os.path.exists(file_path):
+                print(f"文件不存在: {file_path}")
+                skipped_files += 1
+                continue
+
+            # 检查文件大小
+            file_size = os.path.getsize(file_path)
+            if file_size == 0:
+                print(f"文件为空: {file_path}")
+                skipped_files += 1
+                continue
+
+            if file_size > 100 * 1024 * 1024:  # 100MB限制
+                print(f"文件过大(>{100}MB): {file_path}")
+                skipped_files += 1
+                continue
+
             raw_docs = self._load_documents(file_path)
             if not raw_docs:
                 skipped_files += 1
                 continue
 
-            docs = self.text_splitter.split_documents(raw_docs)
+            # 检查文档内容是否有效
+            valid_docs = [doc for doc in raw_docs if doc.page_content and doc.page_content.strip()]
+            if not valid_docs:
+                print(f"文件无有效文本内容: {file_path}")
+                skipped_files += 1
+                continue
+
+            docs = self.text_splitter.split_documents(valid_docs)
             all_docs.extend(docs)
             processed_files += 1
             print(f"✅ 已处理: {file_path} -> {len(docs)}个片段")
@@ -156,26 +215,39 @@ class VectorDBManager:
 
             print(f"开始嵌入处理 ({len(batches)}批, 每批{batch_size}个文档)...")
 
-            # 创建新的向量数据库
-            self.vector_db = Chroma.from_documents(
-                documents=batches[0],
-                embedding=self.embedding,
-                persist_directory=config.VECTOR_DB_PATH
-            )
+            # 创建新的向量数据库或添加到现有数据库
+            if not self.is_initialized or not self.vector_db:
+                self.vector_db = Chroma.from_documents(
+                    documents=batches[0],
+                    embedding=self.embedding,
+                    persist_directory=config.VECTOR_DB_PATH
+                )
+                start_index = 1
+            else:
+                start_index = 0
+                self.vector_db.add_documents(
+                    documents=batches[0],
+                    embedding=self.embedding
+                )
 
             # 添加剩余批次
-            for i, batch in enumerate(batches[1:]):
-                print(f"处理批次 {i + 2}/{len(batches)}...")
+            for i, batch in enumerate(batches[start_index:]):
+                print(f"处理批次 {i + 1 + start_index}/{len(batches)}...")
                 self.vector_db.add_documents(
                     documents=batch,
                     embedding=self.embedding
                 )
+                # 添加延迟避免API速率限制
+                time.sleep(0.5)
 
+            # 持久化数据库
+            self.vector_db.persist()
             print(f"✅ 向量数据库更新完成，存储在: {config.VECTOR_DB_PATH}")
             self.is_initialized = True
             return True
         except Exception as e:
             print(f"❌ 向量数据库更新失败: {str(e)}")
+            traceback.print_exc()
             self.is_initialized = False
             return False
 

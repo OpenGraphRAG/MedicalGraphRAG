@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="login-container">
-    <div class="login-box">
-        <div class="login-header">
-            <i class="fas fa-book-medical"></i>
-            <h1>健康知识平台</h1>
+<div class="admin-login-container">
+    <div class="admin-login-box">
+        <div class="admin-login-header">
+            <i class="fas fa-user-shield"></i>
+            <h1>健康知识平台 - 管理员登录</h1>
+            <p>请使用管理员账号登录系统后台</p>
         </div>
 
-        <form class="login-form" method="POST" action="{{ url_for('login') }}">
+        <form class="admin-login-form" method="POST" action="{{ url_for('admin_login') }}">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     <div class="flash-messages">
@@ -20,10 +21,10 @@
             {% endwith %}
 
             <div class="form-group">
-                <label for="phone">手机号</label>
+                <label for="username">管理员账号</label>
                 <div class="input-with-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                    <input type="text" id="phone" name="phone" placeholder="请输入您的手机号" required>
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="请输入管理员账号" required>
                 </div>
             </div>
 
@@ -35,22 +36,203 @@
                 </div>
             </div>
 
-            <button type="submit" class="login-btn">登录系统</button>
+            <button type="submit" class="admin-login-btn">管理员登录</button>
 
-            <div class="login-footer">
-                <p>还没有账号？<a href="{{ url_for('register') }}">立即注册</a></p>
-                <p><a href="#">忘记密码？</a></p>
+            <div class="admin-login-footer">
+                <p><a href="{{ url_for('login') }}">返回患者登录</a></p>
             </div>
         </form>
     </div>
 </div>
 
+<style>
+.admin-login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+}
+
+.admin-login-box {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 420px;
+    padding: 35px;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-login-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+}
+
+.admin-login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.admin-login-header i {
+    font-size: 42px;
+    color: #4b6cb7;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.admin-login-header h1 {
+    color: #2c3e50;
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.admin-login-header p {
+    color: #7f8c8d;
+    margin: 0;
+    font-size: 14px;
+}
+
+.admin-login-form .form-group {
+    margin-bottom: 20px;
+}
+
+.admin-login-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+.input-with-icon input:focus {
+    outline: none;
+    border-color: #4b6cb7;
+    box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.1);
+}
+
+.admin-login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 10px;
+}
+
+.admin-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(75, 108, 183, 0.3);
+}
+
+.admin-login-footer {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.admin-login-footer a {
+    color: #4b6cb7;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.admin-login-footer a:hover {
+    color: #182848;
+    text-decoration: underline;
+}
+
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.flash.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+.flash.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+
+@media (max-width: 480px) {
+    .admin-login-box {
+        padding: 25px;
+    }
+
+    .admin-login-header h1 {
+        font-size: 20px;
+    }
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 手机号输入验证
-    const phoneInput = document.getElementById('phone');
-    phoneInput.addEventListener('input', function() {
-        this.value = this.value.replace(/\D/g, '').substring(0, 11);
+    // 表单验证
+    const form = document.querySelector('.admin-login-form');
+    form.addEventListener('submit', function(e) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!username) {
+            e.preventDefault();
+            alert('请输入管理员账号');
+            return false;
+        }
+
+        if (!password) {
+            e.preventDefault();
+            alert('请输入密码');
+            return false;
+        }
     });
 });
 </script>
