@@ -29,10 +29,13 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 ## 二、系统架构
 ### 系统架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/49415d4f-d83a-4ca6-a892-d9cc0779b914" />
+
 ### 模块架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/f5aee87d-8d4d-4b43-b317-92a03b6dbad8" />
+
 ### 数据流架构
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/a13f6165-64f1-406f-8fb6-f58fcc8d54db" />
+
 ### 部署架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/3479eaff-8c9e-47a6-ba74-8c96a5f62a0d" />
 
