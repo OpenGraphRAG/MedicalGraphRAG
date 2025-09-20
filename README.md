@@ -48,7 +48,15 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 - **大模型**：阿里云通义大模型 API
 - **部署**：Docker、Nginx
 ### demo
-<img width="2864" height="1432" alt="image" src="https://github.com/user-attachments/assets/15de2c87-c284-4969-bb27-df4a48b47b1d" />
+<img width="1406" height="685" alt="截屏2025-09-21 03 20 06" src="https://github.com/user-attachments/assets/9abdb3f1-fbf9-4227-bc7a-50ede81150a0" />
+
+<img width="1383" height="680" alt="截屏2025-09-21 03 21 07" src="https://github.com/user-attachments/assets/32fed79b-a6bd-4e0c-9f9d-0c842c3f15d5" />
+
+<img width="1382" height="681" alt="截屏2025-09-21 03 21 26" src="https://github.com/user-attachments/assets/3bbc49a0-f315-453d-b1e8-c38139e09491" />
+
+<img width="1391" height="670" alt="截屏2025-09-21 03 21 51" src="https://github.com/user-attachments/assets/a436c9e3-1062-43a2-8316-ed88591e2c4d" />
+
+<img width="1387" height="678" alt="截屏2025-09-21 03 22 02" src="https://github.com/user-attachments/assets/21726ddf-57ba-4924-9085-59baf51a5d1c" />
 
 ## 三、快速开始
 
