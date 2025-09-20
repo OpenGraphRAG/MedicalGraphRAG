@@ -27,18 +27,16 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 | **管理端 - 文档管理** | 文件 & URL 双模式上传，实时向量化进度条                  |
 
 ## 二、系统架构
-
-### 2.1 整体架构图
-#### 系统架构图
+### 系统架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/49415d4f-d83a-4ca6-a892-d9cc0779b914" />
-#### 模块架构图
+### 模块架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/f5aee87d-8d4d-4b43-b317-92a03b6dbad8" />
-#### 数据流架构
+### 数据流架构
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/a13f6165-64f1-406f-8fb6-f58fcc8d54db" />
-#### 部署架构图
+### 部署架构图
 <img width="1902" height="942" alt="image" src="https://github.com/user-attachments/assets/3479eaff-8c9e-47a6-ba74-8c96a5f62a0d" />
 
-### 2.2 技术栈
+### 技术栈
 
 - **前端**：HTML5、CSS3、JavaScript、Tailwind CSS
 - **后端**：Python、Flask
@@ -46,7 +44,7 @@ MedicalGraphRAG 是一个结合医学知识图谱和检索增强生成（RAG）�
 - **向量检索**：基于 FAISS 的相似度检索
 - **大模型**：阿里云通义大模型 API
 - **部署**：Docker、Nginx
-### 2.3 demo
+### demo
 <img width="2864" height="1432" alt="image" src="https://github.com/user-attachments/assets/15de2c87-c284-4969-bb27-df4a48b47b1d" />
 
 ## 三、快速开始
