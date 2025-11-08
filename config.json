@@ -14,7 +14,7 @@
     "KG_SCHEMA": "schema/kg_schema.json",
     "GUIJI_KEY": "sk-nnvjbygjudokdoiuhklskuvzwormyaxdpjstjwmtqgedmcxr",
     "EXTERNAL_FILE": "documents",
-    "DOCUMENTS_DIR": "/Users/local/GraphRAG/MedicalRAG/web/documents",
+    "DOCUMENTS_DIR": "/Users/local/GraphRAG/MedicalRAG/MedicalGraphRAG/documents",
     "SQLITE_DB_PATH": "/Users/local/GraphRAG/MedicalRAG/web/knowledge.db",
     "EMBEDDING_URL": "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding",
     "EMBEDDING_MODEL": "text-embedding-v1",

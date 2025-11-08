@@ -100,9 +100,15 @@ class Config:
             if key in self.config:
                 # 处理特殊类型转换
                 if key in ['CHUNK_SIZE', 'CHUNK_OVERLAP', 'VECTOR_TOP_K', 'GRAPH_TOP_K']:
-                    self.config[key] = int(value)
+                    self.config[key] = int(value) if value else 0
                 elif key == 'ALLOWED_EXTENSIONS':
-                    self.config[key] = [ext.strip() for ext in value.split(',')]
+                    # 如果值是字符串，则分割为列表；如果已经是列表，则直接使用
+                    if isinstance(value, str):
+                        self.config[key] = [ext.strip() for ext in value.split(',')]
+                    elif isinstance(value, list):
+                        self.config[key] = value
+                    else:
+                        self.config[key] = []
                 else:
                     self.config[key] = value
 

@@ -2,7 +2,6 @@ import nltk
 import os
 import sqlite3
 import traceback
-import threading
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -36,7 +35,15 @@ vdb_manager = VectorDBManager()
 graph_rag = GraphRAGSystem(kg_manager, vdb_manager)
 
 
-# 数据库初始化
+# 获取默认配置
+@app.route('/admin/system_settings/defaults')
+def get_default_config():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    return jsonify(config.DEFAULT_CONFIG)
+
+
+# 在 init_db() 函数中，确保 prompt_templates 表的创建代码正确添加
 def init_db():
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
@@ -152,6 +159,20 @@ def init_db():
         )
     ''')
 
+    # 创建 Prompt 模板表 - 确保这个表被创建
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS prompt_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            content TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'general',
+            is_active BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     # 添加默认管理员
     c.execute("SELECT COUNT(*) FROM admins WHERE username = 'admin'")
     if c.fetchone()[0] == 0:
@@ -159,9 +180,176 @@ def init_db():
         c.execute("INSERT INTO admins (username, password) VALUES (?, ?)",
                   ('admin', hashed_password))
 
+    # 添加默认的 Prompt 模板
+    c.execute("SELECT COUNT(*) FROM prompt_templates")
+    if c.fetchone()[0] == 0:
+        default_templates = [
+            ('健康知识推送模板', '用于生成个性化健康知识推送的模板',
+             '''你是一名健康知识助手，请基于下面用户的健康画像与知识图谱结果，用专业的语句推送出**个性化健康知识**，要求：
+
+- 仅围绕用户 **真实健康状况** 与 **知识图谱中的有效信息**
+- 分点推送出有关系的健康知识，并且要明确标注每个知识点的来源网址
+- 要求推送的健康知识与用户的健康状况、知识图谱有效信息强相关
+- 可以稍微给出在*饮食、运动、用药、复查、注意事项等具体可操作建议
+- 以 Markdown 格式输出，可含小标题、列表、表情符号
+- **重要**：在每个知识点后面必须用 [来源](URL) 的格式标注来源链接，URL 必须完整可点击
+
+---
+### 👤 用户健康画像
+{user_input}
+
+---
+
+### 🔍 知识图谱匹配结果
+{kg_results}
+
+---
+
+### 📄 相关文档片段
+{vdb_results}
+
+---
+
+请开始生成 **专属健康知识推送**，确保每个知识点都有明确的来源标注：''', 'health_knowledge', 1),
+
+            ('通用问答模板', '适用于一般知识问答场景',
+             '''你是一个专业的知识问答助手，请基于以下知识回答用户问题：
+
+### 相关知识：
+{kg_results}
+
+### 相关文档：
+{vdb_results}
+
+### 用户问题：
+{user_input}
+
+请基于以上信息给出专业、准确的回答：''', 'general', 0),
+
+            ('医学诊断建议模板', '用于生成医学诊断建议',
+             '''你是一名专业的医学顾问，请基于患者的健康信息和相关医学知识提供诊断建议：
+
+### 患者信息：
+{user_input}
+
+### 医学知识图谱：
+{kg_results}
+
+### 相关医学文献：
+{vdb_results}
+
+请提供专业的医学建议，包括可能的诊断、建议检查和注意事项：''', 'medical', 0)
+        ]
+
+        c.executemany('''
+            INSERT INTO prompt_templates (name, description, content, category, is_active)
+            VALUES (?, ?, ?, ?, ?)
+        ''', default_templates)
+
     conn.commit()
     conn.close()
 
+
+def check_and_fix_database_tables():
+    """
+    检查并修复数据库表结构，确保所有必要的表都存在
+    """
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 检查 prompt_templates 表是否存在
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='prompt_templates'")
+        if not c.fetchone():
+            print("创建缺失的 prompt_templates 表...")
+
+            # 创建 Prompt 模板表
+            c.execute('''
+                CREATE TABLE prompt_templates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    content TEXT NOT NULL,
+                    category TEXT NOT NULL DEFAULT 'general',
+                    is_active BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # 添加默认模板
+            default_templates = [
+                ('健康知识推送模板', '用于生成个性化健康知识推送的模板',
+                 '''你是一名健康知识助手，请基于下面用户的健康画像与知识图谱结果，用专业的语句推送出**个性化健康知识**，要求：
+
+- 仅围绕用户 **真实健康状况** 与 **知识图谱中的有效信息**
+- 分点推送出有关系的健康知识，并且要明确标注每个知识点的来源网址
+- 要求推送的健康知识与用户的健康状况、知识图谱有效信息强相关
+- 可以稍微给出在*饮食、运动、用药、复查、注意事项等具体可操作建议
+- 以 Markdown 格式输出，可含小标题、列表、表情符号
+- **重要**：在每个知识点后面必须用 [来源](URL) 的格式标注来源链接，URL 必须完整可点击
+
+---
+### 👤 用户健康画像
+{user_input}
+
+---
+
+### 🔍 知识图谱匹配结果
+{kg_results}
+
+---
+
+### 📄 相关文档片段
+{vdb_results}
+
+---
+
+请开始生成 **专属健康知识推送**，确保每个知识点都有明确的来源标注：''', 'health_knowledge', 1),
+
+                ('通用问答模板', '适用于一般知识问答场景',
+                 '''你是一个专业的知识问答助手，请基于以下知识回答用户问题：
+
+### 相关知识：
+{kg_results}
+
+### 相关文档：
+{vdb_results}
+
+### 用户问题：
+{user_input}
+
+请基于以上信息给出专业、准确的回答：''', 'general', 0),
+
+                ('医学诊断建议模板', '用于生成医学诊断建议',
+                 '''你是一名专业的医学顾问，请基于患者的健康信息和相关医学知识提供诊断建议：
+
+### 患者信息：
+{user_input}
+
+### 医学知识图谱：
+{kg_results}
+
+### 相关医学文献：
+{vdb_results}
+
+请提供专业的医学建议，包括可能的诊断、建议检查和注意事项：''', 'medical', 0)
+            ]
+
+            c.executemany('''
+                INSERT INTO prompt_templates (name, description, content, category, is_active)
+                VALUES (?, ?, ?, ?, ?)
+            ''', default_templates)
+
+            print("prompt_templates 表创建完成")
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"检查数据库表时出错: {e}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 # 添加测试患者数据
 def add_test_patients():
@@ -266,9 +454,9 @@ def register():
         allergies = request.form.get('allergies', '')
         occupation = request.form.get('occupation', '')
         ethnicity = request.form.get('ethnicity', '')
-        main_activity = request.form.get('main_activity', '')
+        # main_activity = request.form.get('main_activity', '')
         education = request.form.get('education', '')
-        employment = request.form.get('employment', '')
+        # employment = request.form.get('employment', '')
         marital_status = request.form.get('marital_status', '')
         is_smoker = request.form.get('is_smoker', '否')
         is_drinker = request.form.get('is_drinker', '否')
@@ -292,16 +480,16 @@ def register():
             c.execute('''
                 INSERT INTO patients (
                     name, phone, password, age, gender, blood_type, height, weight, 
-                    conditions, allergies, occupation, ethnicity, main_activity, 
-                    education, employment, marital_status, is_smoker, is_drinker,
+                    conditions, allergies, occupation, ethnicity, 
+                    education, marital_status, is_smoker, is_drinker,
                     surgery_history, medications, disease_history, systolic_bp, 
                     diastolic_bp, bp_measure_time, family_history, regular_exercise
                 ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 name, phone, hashed_password, age, gender, blood_type,
                 height, weight, conditions, allergies,
-                occupation, ethnicity, main_activity, education, employment, marital_status,
+                occupation, ethnicity,  education,  marital_status,
                 is_smoker, is_drinker, surgery_history, medications, disease_history,
                 systolic_bp, diastolic_bp, bp_measure_time, family_history, regular_exercise
             ))
@@ -346,38 +534,40 @@ def health_profile():
         return redirect(url_for('login'))
 
     # 安全访问字段（避免KeyError）
+    # 在 health_profile 函数中，修改健康数据的获取方式
     def get_patient_field(field, default=''):
-        return patient[field] if field in patient.keys() else default
+        # 使用辅助函数
+        return get_row_field(patient, field, default)
 
-    # 格式化健康数据
+    # 或者直接使用辅助函数
     health_data = {
-        'id': get_patient_field('id'),
-        'name': get_patient_field('name'),
-        'phone': get_patient_field('phone'),
-        'age': get_patient_field('age'),
-        'gender': get_patient_field('gender'),
-        'blood_type': get_patient_field('blood_type'),
-        'height': get_patient_field('height'),
-        'weight': get_patient_field('weight'),
-        'conditions': get_patient_field('conditions'),
-        'allergies': get_patient_field('allergies'),
-        'occupation': get_patient_field('occupation'),
-        'ethnicity': get_patient_field('ethnicity'),
-        'main_activity': get_patient_field('main_activity'),
-        'education': get_patient_field('education'),
-        'employment': get_patient_field('employment'),
-        'marital_status': get_patient_field('marital_status'),
-        'is_smoker': get_patient_field('is_smoker'),
-        'is_drinker': get_patient_field('is_drinker'),
-        'surgery_history': get_patient_field('surgery_history'),
-        'medications': get_patient_field('medications'),
-        'disease_history': get_patient_field('disease_history'),
-        'systolic_bp': get_patient_field('systolic_bp'),
-        'diastolic_bp': get_patient_field('diastolic_bp'),
-        'bp_measure_time': get_patient_field('bp_measure_time'),
-        'family_history': get_patient_field('family_history'),
-        'regular_exercise': get_patient_field('regular_exercise'),
-        'created_at': get_patient_field('created_at')
+        'id': get_row_field(patient, 'id'),
+        'name': get_row_field(patient, 'name'),
+        'phone': get_row_field(patient, 'phone'),
+        'age': get_row_field(patient, 'age'),
+        'gender': get_row_field(patient, 'gender'),
+        'blood_type': get_row_field(patient, 'blood_type'),
+        'height': get_row_field(patient, 'height'),
+        'weight': get_row_field(patient, 'weight'),
+        'conditions': get_row_field(patient, 'conditions'),
+        'allergies': get_row_field(patient, 'allergies'),
+        'occupation': get_row_field(patient, 'occupation'),
+        'ethnicity': get_row_field(patient, 'ethnicity'),
+        'main_activity': get_row_field(patient, 'main_activity'),
+        'education': get_row_field(patient, 'education'),
+        'employment': get_row_field(patient, 'employment'),
+        'marital_status': get_row_field(patient, 'marital_status'),
+        'is_smoker': get_row_field(patient, 'is_smoker'),
+        'is_drinker': get_row_field(patient, 'is_drinker'),
+        'surgery_history': get_row_field(patient, 'surgery_history'),
+        'medications': get_row_field(patient, 'medications'),
+        'disease_history': get_row_field(patient, 'disease_history'),
+        'systolic_bp': get_row_field(patient, 'systolic_bp'),
+        'diastolic_bp': get_row_field(patient, 'diastolic_bp'),
+        'bp_measure_time': get_row_field(patient, 'bp_measure_time'),
+        'family_history': get_row_field(patient, 'family_history'),
+        'regular_exercise': get_row_field(patient, 'regular_exercise'),
+        'created_at': get_row_field(patient, 'created_at')
     }
 
     # 计算BMI
@@ -507,6 +697,154 @@ def admin_dashboard():
                            total_pages=total_pages)
 
 
+# 添加删除用户的路由
+@app.route('/admin/patient/<int:patient_id>', methods=['DELETE'])
+def delete_patient(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 首先删除相关的医疗记录和检查指标
+        c.execute('DELETE FROM medical_records WHERE patient_id = ?', (patient_id,))
+        c.execute('DELETE FROM check_metrics WHERE patient_id = ?', (patient_id,))
+
+        # 然后删除患者
+        c.execute('DELETE FROM patients WHERE id = ?', (patient_id,))
+        conn.commit()
+
+        return jsonify({'success': True})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
+# 确保预览患者信息的路由正常工作
+@app.route('/admin/patient/<int:patient_id>/preview')
+def preview_patient(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    # 获取患者基本信息
+    c.execute('SELECT * FROM patients WHERE id = ?', (patient_id,))
+    patient = c.fetchone()
+
+    conn.close()
+
+    if not patient:
+        return jsonify({'error': 'Patient not found'}), 404
+
+    # 转换为字典格式
+    patient_data = dict(patient)
+
+    # 计算BMI
+    try:
+        height_val = float(patient_data['height'].replace('cm', '')) if patient_data.get('height') else 0
+        weight_val = float(patient_data['weight'].replace('kg', '')) if patient_data.get('weight') else 0
+        if height_val > 0 and weight_val > 0:
+            height_in_m = height_val / 100
+            patient_data['bmi'] = round(weight_val / (height_in_m * height_in_m), 1)
+            if patient_data['bmi'] < 18.5:
+                patient_data['bmi_category'] = '偏瘦'
+            elif 18.5 <= patient_data['bmi'] < 24:
+                patient_data['bmi_category'] = '正常'
+            elif 24 <= patient_data['bmi'] < 28:
+                patient_data['bmi_category'] = '超重'
+            else:
+                patient_data['bmi_category'] = '肥胖'
+        else:
+            patient_data['bmi'] = ''
+            patient_data['bmi_category'] = ''
+    except:
+        patient_data['bmi'] = ''
+        patient_data['bmi_category'] = ''
+
+    return jsonify(patient_data)
+
+
+# 确保更新患者信息的路由正确处理所有字段
+@app.route('/admin/patient/<int:patient_id>/update_basic', methods=['POST'])
+def update_patient_basic(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 使用参数化查询更新所有字段
+        c.execute('''
+            UPDATE patients SET 
+                name = COALESCE(?, name), 
+                phone = COALESCE(?, phone),
+                age = COALESCE(?, age), 
+                gender = COALESCE(?, gender), 
+                blood_type = COALESCE(?, blood_type), 
+                height = COALESCE(?, height), 
+                weight = COALESCE(?, weight), 
+                conditions = COALESCE(?, conditions), 
+                allergies = COALESCE(?, allergies),
+                occupation = COALESCE(?, occupation),
+                ethnicity = COALESCE(?, ethnicity),
+                education = COALESCE(?, education),
+                marital_status = COALESCE(?, marital_status),
+                is_smoker = COALESCE(?, is_smoker),
+                is_drinker = COALESCE(?, is_drinker),
+                surgery_history = COALESCE(?, surgery_history),
+                medications = COALESCE(?, medications),
+                disease_history = COALESCE(?, disease_history),
+                systolic_bp = COALESCE(?, systolic_bp),
+                diastolic_bp = COALESCE(?, diastolic_bp),
+                bp_measure_time = COALESCE(?, bp_measure_time),
+                family_history = COALESCE(?, family_history),
+                regular_exercise = COALESCE(?, regular_exercise)
+            WHERE id = ?
+        ''', (
+            data.get('name'),
+            data.get('phone'),
+            data.get('age'),
+            data.get('gender'),
+            data.get('blood_type'),
+            data.get('height'),
+            data.get('weight'),
+            data.get('conditions'),
+            data.get('allergies'),
+            data.get('occupation'),
+            data.get('ethnicity'),
+            # data.get('main_activity'),
+            data.get('education'),
+            # data.get('employment'),
+            data.get('marital_status'),
+            data.get('is_smoker'),
+            data.get('is_drinker'),
+            data.get('surgery_history'),
+            data.get('medications'),
+            data.get('disease_history'),
+            data.get('systolic_bp'),
+            data.get('diastolic_bp'),
+            data.get('bp_measure_time'),
+            data.get('family_history'),
+            data.get('regular_exercise'),
+            patient_id
+        ))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"更新失败: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
 # 获取患者详细信息
 @app.route('/admin/patient/<int:patient_id>')
 def get_patient_details(patient_id):
@@ -573,126 +911,6 @@ def get_patient_details(patient_id):
     }
 
     return jsonify(patient_data)
-
-
-@app.route('/admin/patient/<int:patient_id>/preview')
-def preview_patient(patient_id):
-    if 'admin_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    conn = sqlite3.connect(app.config['DATABASE'])
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-
-    # 获取患者基本信息
-    c.execute('SELECT * FROM patients WHERE id = ?', (patient_id,))
-    patient = c.fetchone()
-
-    conn.close()
-
-    if not patient:
-        return jsonify({'error': 'Patient not found'}), 404
-
-    # 转换为字典格式
-    patient_data = dict(patient)
-
-    # 计算BMI
-    try:
-        height_val = float(patient_data['height'].replace('cm', '')) if patient_data['height'] else 0
-        weight_val = float(patient_data['weight'].replace('kg', '')) if patient_data['weight'] else 0
-        if height_val > 0 and weight_val > 0:
-            height_in_m = height_val / 100
-            patient_data['bmi'] = round(weight_val / (height_in_m * height_in_m), 1)
-            if patient_data['bmi'] < 18.5:
-                patient_data['bmi_category'] = '偏瘦'
-            elif 18.5 <= patient_data['bmi'] < 24:
-                patient_data['bmi_category'] = '正常'
-            elif 24 <= patient_data['bmi'] < 28:
-                patient_data['bmi_category'] = '超重'
-            else:
-                patient_data['bmi_category'] = '肥胖'
-        else:
-            patient_data['bmi'] = ''
-            patient_data['bmi_category'] = ''
-    except:
-        patient_data['bmi'] = ''
-        patient_data['bmi_category'] = ''
-
-    return jsonify(patient_data)
-
-
-# 更新患者基本信息
-@app.route('/admin/patient/<int:patient_id>/update_basic', methods=['POST'])
-def update_patient_basic(patient_id):
-    if 'admin_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    data = request.json
-    conn = sqlite3.connect(app.config['DATABASE'])
-    c = conn.cursor()
-
-    try:
-        c.execute('''
-            UPDATE patients SET 
-                name = ?, 
-                age = ?, 
-                gender = ?, 
-                blood_type = ?, 
-                height = ?, 
-                weight = ?, 
-                conditions = ?, 
-                allergies = ?,
-                occupation = ?,
-                ethnicity = ?,
-                main_activity = ?,
-                education = ?,
-                employment = ?,
-                marital_status = ?,
-                is_smoker = ?,
-                is_drinker = ?,
-                surgery_history = ?,
-                medications = ?,
-                disease_history = ?,
-                systolic_bp = ?,
-                diastolic_bp = ?,
-                bp_measure_time = ?,
-                family_history = ?,
-                regular_exercise = ?
-            WHERE id = ?
-        ''', (
-            data.get('name', ''),
-            data.get('age', ''),
-            data.get('gender', ''),
-            data.get('blood_type', ''),
-            data.get('height', ''),
-            data.get('weight', ''),
-            data.get('conditions', ''),
-            data.get('allergies', ''),
-            data.get('occupation', ''),
-            data.get('ethnicity', ''),
-            data.get('main_activity', ''),
-            data.get('education', ''),
-            data.get('employment', ''),
-            data.get('marital_status', ''),
-            data.get('is_smoker', ''),
-            data.get('is_drinker', ''),
-            data.get('surgery_history', ''),
-            data.get('medications', ''),
-            data.get('disease_history', ''),
-            data.get('systolic_bp', ''),
-            data.get('diastolic_bp', ''),
-            data.get('bp_measure_time', ''),
-            data.get('family_history', ''),
-            data.get('regular_exercise', ''),
-            patient_id
-        ))
-        conn.commit()
-        return jsonify({'success': True})
-    except Exception as e:
-        print(f"更新失败: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        conn.close()
 
 
 # 添加就诊记录API
@@ -912,7 +1130,7 @@ def list_documents():
     })
 
 
-# 重构文档创建函数
+# 修改 create_document 函数
 @app.route('/admin/knowledge/documents', methods=['POST'])
 def create_document():
     if 'admin_id' not in session:
@@ -922,6 +1140,7 @@ def create_document():
     name = request.form.get('name')
     doc_type = request.form.get('type')
     tags = request.form.get('tags', '')
+    socket_id = request.form.get('socket_id')  # 从表单获取 socket_id
 
     if not name or not doc_type:
         return jsonify({'error': '缺少必要参数: name和type'}), 400
@@ -951,7 +1170,7 @@ def create_document():
                     'allowed': list(allowed_extensions)
                 }), 400
 
-            # 保存文件
+            # 保存文件到文档目录
             file_path = os.path.join(app.config['DOCUMENTS_DIR'], filename)
 
             # 处理文件名冲突
@@ -963,7 +1182,9 @@ def create_document():
                 counter += 1
 
             file.save(file_path)
-            path = file_path
+
+            # 确保使用绝对路径
+            path = os.path.abspath(file_path)
 
         elif doc_type == 'url':
             # 处理URL
@@ -984,6 +1205,15 @@ def create_document():
         conn.commit()
         doc_id = c.lastrowid
 
+        # 如果是URL类型，启动异步爬取任务
+        if doc_type == 'url' and socket_id:
+            # 启动后台线程进行网页爬取
+            threading.Thread(
+                target=crawl_url_content,
+                args=(url, doc_id, socket_id),
+                daemon=True
+            ).start()
+
         return jsonify({
             'success': True,
             'document_id': doc_id,
@@ -992,9 +1222,21 @@ def create_document():
 
     except Exception as e:
         conn.rollback()
+        print(f"创建文档失败: {str(e)}")
         return jsonify({'error': f'创建文档失败: {str(e)}'}), 500
     finally:
         conn.close()
+
+
+# 添加WebSocket事件处理
+@socketio.on('connect')
+def handle_connect():
+    print(f'客户端连接: {request.sid}')
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print(f'客户端断开: {request.sid}')
 
 
 # 更新文档
@@ -1197,6 +1439,10 @@ def vectorize_document_task(doc_id, session_id):
         log_callback(f"文档路径: {doc_path}")
 
         if doc_type == 'file':
+            # 检查文件路径是否是绝对路径，如果不是则转换为绝对路径
+            if not os.path.isabs(doc_path):
+                doc_path = os.path.join(app.config['DOCUMENTS_DIR'], os.path.basename(doc_path))
+
             if not os.path.exists(doc_path):
                 log_callback(f"❌ 文件不存在: {doc_path}", "error")
                 socketio.emit('vectorization_error', {
@@ -1363,6 +1609,131 @@ def kg_status():
     return jsonify(kg_update_status)
 
 
+import requests
+from bs4 import BeautifulSoup
+import threading
+from datetime import time
+
+
+def crawl_url_content(url, doc_id, socket_id):
+    """
+    异步爬取URL内容并保存为结构化文本
+    """
+    try:
+        # 发送爬取开始消息
+        socketio.emit('crawling_update', {
+            'doc_id': doc_id,
+            'message': '开始爬取网页内容...',
+            'progress': 10
+        }, room=socket_id)
+
+        # 发送HTTP请求获取网页内容
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+
+        socketio.emit('crawling_update', {
+            'doc_id': doc_id,
+            'message': '正在获取网页内容...',
+            'progress': 30
+        }, room=socket_id)
+
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+
+        # 解析HTML内容
+        socketio.emit('crawling_update', {
+            'doc_id': doc_id,
+            'message': '解析网页内容...',
+            'progress': 50
+        }, room=socket_id)
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # 提取标题
+        title = soup.find('h1')
+        if not title:
+            title = soup.find('title')
+        title_text = title.get_text().strip() if title else "无标题"
+
+        # 提取摘要/描述
+        description = soup.find('meta', attrs={'name': 'description'})
+        description_text = description['content'].strip() if description else ""
+
+        # 提取正文内容
+        # 尝试多种常见的内容选择器
+        content_selectors = [
+            'article',
+            '.content',
+            '.main-content',
+            '#content',
+            '.post-content',
+            '.entry-content'
+        ]
+
+        content = None
+        for selector in content_selectors:
+            content = soup.select_one(selector)
+            if content:
+                break
+
+        # 如果没有找到特定内容区域，使用body
+        if not content:
+            content = soup.find('body')
+
+        # 清理不需要的元素
+        for element in content.select('script, style, nav, footer, aside, .advertisement'):
+            element.decompose()
+
+        # 获取纯文本内容
+        content_text = content.get_text() if content else ""
+        content_text = '\n'.join([line.strip() for line in content_text.split('\n') if line.strip()])
+
+        socketio.emit('crawling_update', {
+            'doc_id': doc_id,
+            'message': '生成结构化文档...',
+            'progress': 80
+        }, room=socket_id)
+
+        # 创建结构化文本
+        structured_content = f"""标题: {title_text}
+
+摘要: {description_text}
+
+正文内容:
+{content_text}
+"""
+
+        # 保存为txt文件
+        filename = f"web_content_{doc_id}_{int(time.time())}.txt"
+        filepath = os.path.join(app.config['DOCUMENTS_DIR'], filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(structured_content)
+
+        # 更新数据库记录
+        conn = sqlite3.connect(app.config['DATABASE'])
+        c = conn.cursor()
+        c.execute('UPDATE knowledge_documents SET path = ? WHERE id = ?', (filepath, doc_id))
+        conn.commit()
+        conn.close()
+
+        socketio.emit('crawling_update', {
+            'doc_id': doc_id,
+            'message': '网页内容已成功爬取并保存',
+            'progress': 100,
+            'completed': True,
+            'filepath': filepath
+        }, room=socket_id)
+
+    except Exception as e:
+        error_msg = f"爬取网页内容失败: {str(e)}"
+        socketio.emit('crawling_error', {
+            'doc_id': doc_id,
+            'message': error_msg
+        }, room=socket_id)
+
+
 # ========= 新增：图查询接口 =========
 @app.route('/api/kg_path')
 def kg_path():
@@ -1391,28 +1762,13 @@ def kg_search():
 # 知识图谱管理
 @app.route('/knowledge_graph')
 def knowledge_graph():
-    """知识图谱管理页面"""
-    try:
-        # 创建知识图谱管理器
-        kg = KnowledgeGraphManager()
-
-        # 获取图谱统计信息
-        stats = kg.get_kg_statistics()
-
-        # 查询图谱数据（限制100条关系）
-        graph_data = kg.query_whole_graph(limit=100)
-
-        return render_template('knowledge_graph.html',
-                               entity_count=stats["entities"],
-                               relation_count=stats["relationships"],
-                               graph_data=json.dumps(graph_data))
-    except Exception as e:
-        print(f"知识图谱页面错误: {str(e)}")
-        return render_template('knowledge_graph.html',
-                               entity_count=0,
-                               relation_count=0,
-                               graph_data=json.dumps({"nodes": [], "links": []}))
-
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+        # 把连接参数透传给模板
+    return render_template('knowledge_graph.html',
+                           neo4j_uri=config.NEO4J_URI,
+                           neo4j_user=config.NEO4J_USER,
+                           neo4j_password=config.NEO4J_PASSWORD)
 
 # 获取图谱数据API
 @app.route('/api/kg_data')
@@ -1572,12 +1928,16 @@ def logout():
 
 
 # 初始化数据库和测试数据
+# 初始化数据库和测试数据
 def init_all_db_and_patients():
     # 检查数据库文件是否存在
     db_exists = os.path.exists(app.config['DATABASE'])
 
     # 总是初始化数据库结构
     init_db()
+
+    # 检查并修复数据库表结构
+    check_and_fix_database_tables()
 
     # 只在数据库文件不存在时添加测试数据
     if not db_exists:
@@ -1586,6 +1946,17 @@ def init_all_db_and_patients():
     else:
         print("数据库已存在，跳过添加测试数据")
 
+# 手动修复数据库表
+@app.route('/admin/fix_database', methods=['POST'])
+def fix_database_tables():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        check_and_fix_database_tables()
+        return jsonify({'success': True, 'message': '数据库表检查修复完成'})
+    except Exception as e:
+        return jsonify({'error': f'修复数据库表失败: {str(e)}'}), 500
 
 # 系统设置页面
 @app.route('/admin/system_settings')
@@ -1619,7 +1990,93 @@ def update_system_config():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/admin/patient/add', methods=['POST'])
+def add_patient():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 检查手机号是否已存在
+        c.execute('SELECT id FROM patients WHERE phone = ?', (data.get('phone'),))
+        if c.fetchone():
+            return jsonify({'error': '该手机号已注册'}), 400
+
+        # 插入新用户，包含所有字段
+        c.execute('''
+            INSERT INTO patients (
+                name, phone, password, age, gender, blood_type, height, weight, 
+                conditions, allergies, occupation, ethnicity,  
+                education, marital_status, is_smoker, is_drinker,
+                surgery_history, medications, disease_history, systolic_bp, 
+                diastolic_bp, bp_measure_time, family_history, regular_exercise
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('name'),
+            data.get('phone'),
+            generate_password_hash('123456'),  # 默认密码
+            data.get('age'),
+            data.get('gender'),
+            data.get('blood_type'),
+            data.get('height'),
+            data.get('weight'),
+            data.get('conditions'),
+            data.get('allergies'),
+            data.get('occupation'),
+            data.get('ethnicity'),
+            # data.get('main_activity'),
+            data.get('education'),
+            # data.get('employment'),
+            data.get('marital_status'),
+            data.get('is_smoker', '否'),
+            data.get('is_drinker', '否'),
+            data.get('surgery_history'),
+            data.get('medications'),
+            data.get('disease_history'),
+            data.get('systolic_bp'),
+            data.get('diastolic_bp'),
+            data.get('bp_measure_time'),
+            data.get('family_history'),
+            data.get('regular_exercise', '否')
+        ))
+
+        conn.commit()
+        return jsonify({'success': True, 'patient_id': c.lastrowid})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+
 # ---------- 健康推送专用接口 ----------
+def get_row_field(row, field_name, default_value=''):
+    """
+    安全地从数据库行对象中获取字段值
+
+    参数:
+        row: sqlite3.Row 对象
+        field_name: 字段名
+        default_value: 如果字段不存在或为None时的默认值
+
+    返回:
+        字段值或默认值
+    """
+    if row is None:
+        return default_value
+
+    # 检查字段是否存在
+    if field_name not in row.keys():
+        return default_value
+
+    value = row[field_name]
+    return value if value is not None else default_value
+
+
 @app.route('/api/generate_health_knowledge', methods=['POST'])
 def generate_health_knowledge():
     if 'user_id' not in session:
@@ -1629,36 +2086,590 @@ def generate_health_knowledge():
     data = request.get_json() or {}
     user_text = data.get('user_text', '').strip()
 
-    # 1️⃣ 读取用户完整健康画像（略，同前）
+    try:
+        conn = sqlite3.connect(app.config['DATABASE'])
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+
+        # 获取用户完整健康信息
+        c.execute('SELECT * FROM patients WHERE id = ?', (user_id,))
+        user = c.fetchone()
+
+        if not user:
+            return jsonify({'error': '用户信息不存在'}), 404
+
+        conn.close()
+
+        # 使用辅助函数安全地获取字段值
+        lines = [
+            f"👤 患者基本信息：",
+            f"姓名：{get_row_field(user, 'name', '未填写')}",
+            f"年龄：{get_row_field(user, 'age', '未记录')}岁",
+            f"性别：{get_row_field(user, 'gender', '未记录')}",
+            f"血型：{get_row_field(user, 'blood_type', '未记录')}",
+            f"身高：{get_row_field(user, 'height', '未记录')}",
+            f"体重：{get_row_field(user, 'weight', '未记录')}",
+            f"健康状况：{get_row_field(user, 'conditions', '无特殊记录')}",
+            f"过敏史：{get_row_field(user, 'allergies', '无')}",
+            f"吸烟：{get_row_field(user, 'is_smoker', '否')}",
+            f"饮酒：{get_row_field(user, 'is_drinker', '否')}",
+            f"规律运动：{get_row_field(user, 'regular_exercise', '否')}"
+        ]
+
+        # 添加其他健康信息
+        disease_history = get_row_field(user, 'disease_history')
+        family_history = get_row_field(user, 'family_history')
+        medications = get_row_field(user, 'medications')
+
+        if disease_history:
+            lines.append(f"疾病史：{disease_history}")
+        if family_history:
+            lines.append(f"家族病史：{family_history}")
+        if medications:
+            lines.append(f"用药情况：{medications}")
+
+        if user_text:
+            lines.append(f"\n📝 用户补充信息：{user_text}")
+
+        # 组合健康文本
+        health_text = "\n".join(lines)
+
+        # 使用 GraphRAG 系统生成知识
+        rag_result = graph_rag.query(
+            user_input=health_text,
+            depth=2,
+            similarity_threshold=0.75,
+            top_k=5
+        )
+
+        return jsonify({
+            'success': True,
+            'knowledge_content': rag_result['answer'],
+            'formatted_text': health_text
+        })
+
+    except Exception as e:
+        print(f"生成健康知识失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'生成健康知识失败: {str(e)}'}), 500
+
+
+def check_and_fix_document_paths():
+    """
+    检查并修复数据库中的文档路径
+    """
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 获取所有文件类型的文档
+        c.execute('SELECT id, path FROM knowledge_documents WHERE type = "file"')
+        documents = c.fetchall()
+
+        fixed_count = 0
+        for doc_id, path in documents:
+            # 检查路径是否是绝对路径
+            if not os.path.isabs(path):
+                # 尝试修复路径
+                new_path = os.path.join(app.config['DOCUMENTS_DIR'], os.path.basename(path))
+
+                # 如果新路径存在，更新数据库
+                if os.path.exists(new_path):
+                    c.execute('UPDATE knowledge_documents SET path = ? WHERE id = ?', (new_path, doc_id))
+                    fixed_count += 1
+                    print(f"修复文档 {doc_id} 的路径: {path} -> {new_path}")
+
+        conn.commit()
+        print(f"修复了 {fixed_count} 个文档路径")
+
+    except Exception as e:
+        print(f"修复文档路径时出错: {e}")
+    finally:
+        conn.close()
+
+
+@app.route('/admin/knowledge/fix_paths', methods=['POST'])
+def fix_document_paths():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        check_and_fix_document_paths()
+        return jsonify({'success': True, 'fixed_count': '需要返回实际修复数量'})
+    except Exception as e:
+        return jsonify({'error': f'修复路径失败: {str(e)}'}), 500
+
+# ========== 个人中心 ==========
+@app.route('/profile/settings')
+def profile_settings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('profile_settings.html')
+
+
+@app.route('/api/profile/basic', methods=['GET'])
+def get_profile_basic():
+    if 'user_id' not in session:
+        return jsonify({'error': '未登录'}), 401
+    uid = session['user_id']
     conn = sqlite3.connect(app.config['DATABASE'])
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    c.execute('SELECT * FROM patients WHERE id = ?', (user_id,))
-    user = c.fetchone()
-    ...
+    c.execute('SELECT id,name,phone FROM patients WHERE id=?', (uid,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': '用户不存在'}), 404
+    return jsonify(dict(row))
+
+
+@app.route('/api/profile/basic', methods=['PUT'])
+def update_profile_basic():
+    if 'user_id' not in session:
+        return jsonify({'error': '未登录'}), 401
+    uid = session['user_id']
+    data = request.get_json() or {}
+    new_phone = data.get('phone')
+    new_name = data.get('name')
+    new_pwd = data.get('password')
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    if new_phone:
+        c.execute('SELECT id FROM patients WHERE phone=? AND id!=?', (new_phone, uid))
+        if c.fetchone():
+            return jsonify({'error': '手机号已被占用'}), 400
+    sql = 'UPDATE patients SET '
+    args = []
+    if new_name:
+        sql += 'name=?,'
+        args.append(new_name)
+    if new_phone:
+        sql += 'phone=?,'
+        args.append(new_phone)
+    if new_pwd:
+        sql += 'password=?,'
+        args.append(generate_password_hash(new_pwd))
+    if not args:
+        return jsonify({'error': '无更新内容'}), 400
+    sql = sql.rstrip(',') + ' WHERE id=?'
+    args.append(uid)
+    c.execute(sql, args)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# =========== 健康指标 CRUD ===========
+# 1) 查询某患者全部指标
+@app.route('/admin/patient/<int:patient_id>/metrics', methods=['GET'])
+def admin_list_metrics(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute('SELECT * FROM check_metrics WHERE patient_id=? ORDER BY date DESC', (patient_id,))
+    rows = c.fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+# 2) 新增指标
+@app.route('/admin/patient/<int:patient_id>/metrics', methods=['POST'])
+def admin_add_metric(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    c.execute('INSERT INTO check_metrics(patient_id,item,result,reference_range,unit,date,status) VALUES (?,?,?,?,?,?,?)',
+              (patient_id, data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status']))
+    conn.commit()
+    new_id = c.lastrowid
+    conn.close()
+    return jsonify({'success': True, 'id': new_id})
+
+# 3) 修改指标
+@app.route('/admin/metrics/<int:metric_id>', methods=['PUT'])
+def admin_update_metric(metric_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    c.execute('UPDATE check_metrics SET item=?,result=?,reference_range=?,unit=?,date=?,status=? WHERE id=?',
+              (data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status'], metric_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# 4) 删除指标
+@app.route('/admin/metrics/<int:metric_id>', methods=['DELETE'])
+def admin_delete_metric(metric_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    c.execute('DELETE FROM check_metrics WHERE id=?', (metric_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/admin/patient/<int:patient_id>/update_full', methods=['PUT'])
+def admin_update_patient_full(patient_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json()
+
+    # 1. 更新 patients 表（基本信息）
+    sql_patient = '''
+        UPDATE patients SET
+          name=?, phone=?, age=?, gender=?, blood_type=?, height=?, weight=?,
+          conditions=?, allergies=?, occupation=?, ethnicity=?, education=?,
+          marital_status=?, is_smoker=?, is_drinker=?, regular_exercise=?,
+          systolic_bp=?, diastolic_bp=?, bp_measure_time=?,
+          surgery_history=?, medications=?, disease_history=?, family_history=?
+        WHERE id=?
+    '''
+    params = [data[k] for k in (
+        'name','phone','age','gender','blood_type','height','weight',
+        'conditions','allergies','occupation','ethnicity','education',
+        'marital_status','is_smoker','is_drinker','regular_exercise',
+        'systolic_bp','diastolic_bp','bp_measure_time',
+        'surgery_history','medications','disease_history','family_history'
+    )] + [patient_id]
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+    c.execute(sql_patient, params)
+
+    # 2. 全量替换健康指标（简单方案：先删后插）
+    c.execute('DELETE FROM check_metrics WHERE patient_id=?', (patient_id,))
+    for m in data.get('metrics', []):
+        c.execute(
+            'INSERT INTO check_metrics(patient_id,item,result,reference_range,unit,date,status) VALUES (?,?,?,?,?,?,?)',
+            (patient_id, m['item'], m['result'], m['reference_range'], m['unit'], m['date'], m['status'])
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+# 获取用户健康指标（分页+筛选）
+@app.route('/api/health_metrics')
+def get_health_metrics():
+    if 'user_id' not in session:
+        return jsonify({'error': '未登录'}), 401
+
+    patient_id = session['user_id']
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    start_date = request.args.get('start_date', '')
+    end_date = request.args.get('end_date', '')
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    # 构建查询条件
+    query = 'SELECT * FROM check_metrics WHERE patient_id = ?'
+    params = [patient_id]
+
+    if start_date:
+        query += ' AND date >= ?'
+        params.append(start_date)
+    if end_date:
+        query += ' AND date <= ?'
+        params.append(end_date)
+
+    # 获取总数
+    count_query = query.replace('SELECT *', 'SELECT COUNT(*)')
+    c.execute(count_query, params)
+    total = c.fetchone()[0]
+
+    # 添加排序和分页
+    query += ' ORDER BY date DESC LIMIT ? OFFSET ?'
+    params.extend([per_page, (page - 1) * per_page])
+
+    c.execute(query, params)
+    metrics = c.fetchall()
     conn.close()
 
-    # 2️⃣ 组装上下文文本（含用户输入）
-    lines = [
-        f"用户：{user['name']}，{user['age']}岁，{user['gender']}，{user['blood_type']}血型",
-        f"身高 {user['height']}，体重 {user['weight']}，状态：{user['conditions']}",
-        f"过敏史：{user['allergies'] or '无'}；吸烟：{user['is_smoker'] or '否'}；饮酒：{user['is_drinker'] or '否'}"
-    ]
-    if user_text:
-        lines.append(f"\n用户补充信息：{user_text}")
+    # 格式化数据
+    metrics_data = []
+    for metric in metrics:
+        metrics_data.append({
+            'id': metric['id'],
+            'item': metric['item'],
+            'result': metric['result'],
+            'reference_range': metric['reference_range'],
+            'unit': metric['unit'],
+            'date': metric['date'],
+            'status': metric['status']
+        })
 
-    # 3️⃣ GraphRAG 生成知识（略，同前）
-    health_text = "\n".join(lines)
-    rag = GraphRAGSystem()
-    rag_result = rag.query(user_input=health_text, depth=2, similarity_threshold=0.75, top_k=5)
+    total_pages = (total + per_page - 1) // per_page
 
     return jsonify({
-        'success': True,
-        'formatted_text': health_text,
-        'knowledge_content': rag_result['answer']
+        'metrics': metrics_data,
+        'pagination': {
+            'current_page': page,
+            'total_pages': total_pages,
+            'total_items': total,
+            'per_page': per_page
+        }
     })
 
 
+# ============================== Prompt模板管理 ==============================
+@app.route('/admin/prompt_templates')
+def prompt_templates_management():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+
+    return render_template('prompt_templates.html')
+
+
+# 获取所有Prompt模板
+@app.route('/api/prompt_templates', methods=['GET'])
+def get_prompt_templates():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute('''
+        SELECT * FROM prompt_templates 
+        ORDER BY is_active DESC, created_at DESC
+    ''')
+    templates = c.fetchall()
+    conn.close()
+
+    templates_data = []
+    for template in templates:
+        templates_data.append({
+            'id': template['id'],
+            'name': template['name'],
+            'description': template['description'],
+            'content': template['content'],
+            'category': template['category'],
+            'is_active': bool(template['is_active']),
+            'created_at': template['created_at'],
+            'updated_at': template['updated_at']
+        })
+
+    return jsonify(templates_data)
+
+
+# 获取单个Prompt模板
+@app.route('/api/prompt_templates/<int:template_id>', methods=['GET'])
+def get_prompt_template(template_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute('SELECT * FROM prompt_templates WHERE id = ?', (template_id,))
+    template = c.fetchone()
+    conn.close()
+
+    if not template:
+        return jsonify({'error': '模板不存在'}), 404
+
+    template_data = {
+        'id': template['id'],
+        'name': template['name'],
+        'description': template['description'],
+        'content': template['content'],
+        'category': template['category'],
+        'is_active': bool(template['is_active']),
+        'created_at': template['created_at'],
+        'updated_at': template['updated_at']
+    }
+
+    return jsonify(template_data)
+
+
+# 创建新的Prompt模板
+@app.route('/api/prompt_templates', methods=['POST'])
+def create_prompt_template():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+
+    if not data.get('name') or not data.get('content'):
+        return jsonify({'error': '模板名称和内容不能为空'}), 400
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        c.execute('''
+            INSERT INTO prompt_templates (name, description, content, category, is_active)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            data['name'],
+            data.get('description', ''),
+            data['content'],
+            data.get('category', 'general'),
+            data.get('is_active', False)
+        ))
+
+        template_id = c.lastrowid
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '模板创建成功',
+            'template_id': template_id
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': f'创建模板失败: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+# 更新Prompt模板
+@app.route('/api/prompt_templates/<int:template_id>', methods=['PUT'])
+def update_prompt_template(template_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.get_json()
+
+    if not data.get('name') or not data.get('content'):
+        return jsonify({'error': '模板名称和内容不能为空'}), 400
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        c.execute('''
+            UPDATE prompt_templates 
+            SET name = ?, description = ?, content = ?, category = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (
+            data['name'],
+            data.get('description', ''),
+            data['content'],
+            data.get('category', 'general'),
+            template_id
+        ))
+
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '模板更新成功'
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': f'更新模板失败: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+# 删除Prompt模板
+@app.route('/api/prompt_templates/<int:template_id>', methods=['DELETE'])
+def delete_prompt_template(template_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 检查是否是激活模板
+        c.execute('SELECT is_active FROM prompt_templates WHERE id = ?', (template_id,))
+        template = c.fetchone()
+
+        if template and template[0]:
+            return jsonify({'error': '不能删除当前激活的模板'}), 400
+
+        c.execute('DELETE FROM prompt_templates WHERE id = ?', (template_id,))
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '模板删除成功'
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': f'删除模板失败: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+# 设置激活模板
+@app.route('/api/prompt_templates/<int:template_id>/set_active', methods=['POST'])
+def set_active_prompt_template(template_id):
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    c = conn.cursor()
+
+    try:
+        # 首先取消所有模板的激活状态
+        c.execute('UPDATE prompt_templates SET is_active = 0')
+
+        # 然后设置指定模板为激活状态
+        c.execute('UPDATE prompt_templates SET is_active = 1 WHERE id = ?', (template_id,))
+        conn.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '模板已设置为激活状态'
+        })
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': f'设置激活模板失败: {str(e)}'}), 500
+    finally:
+        conn.close()
+
+
+# 获取当前激活的模板
+@app.route('/api/prompt_templates/active', methods=['GET'])
+def get_active_prompt_template():
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = sqlite3.connect(app.config['DATABASE'])
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+
+    c.execute('SELECT * FROM prompt_templates WHERE is_active = 1')
+    active_template = c.fetchone()
+    conn.close()
+
+    if not active_template:
+        return jsonify({'error': '没有激活的模板'}), 404
+
+    template_data = {
+        'id': active_template['id'],
+        'name': active_template['name'],
+        'description': active_template['description'],
+        'content': active_template['content'],
+        'category': active_template['category'],
+        'is_active': bool(active_template['is_active']),
+        'created_at': active_template['created_at']
+    }
+
+    return jsonify(template_data)
+
+# 在应用启动时调用此函数
+check_and_fix_document_paths()
+
 if __name__ == '__main__':
     init_all_db_and_patients()
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5001)

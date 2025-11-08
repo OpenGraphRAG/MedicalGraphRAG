@@ -11,6 +11,8 @@ GraphRAGSystem - 整合向量检索与知识图谱的问答系统
 4. 整合两种检索结果形成规范的Prompt
 5. 调用大模型API生成最终回答
 """
+import datetime
+
 # !/usr/bin/env python3
 # coding: utf-8
 """
@@ -53,38 +55,56 @@ class GraphRAGSystem:
         kg_res = self.kg.process_user_query(user_input, save_to_db=False, depth=depth,
                                             similarity_threshold=similarity_threshold, top_k=top_k)
 
-        # 3️⃣ 构造 Prompt
-        prompt = f"""你是一名健康知识助手，请基于下面用户的健康画像与知识图谱结果，用专业的语句推送出**个性化健康知识**，要求：
+        # 3️⃣ 获取激活的Prompt模板
+        active_prompt = self.get_active_prompt_template()
 
-- 仅围绕用户 **真实健康状况** 与 **知识图谱中的有效信息**
-- 分点推送出有关系的健康知识，并且要标注网址来源
-- 要求推送的健康知识与用户的健康状况、知识图谱有效信息强相关
-- 可以稍微给出在*饮食、运动、用药、复查、注意事项等具体可操作建议
-- 以 Markdown 格式输出，可含小标题、列表、表情符号
----
-### 👤 用户健康画像
-{user_input}
+        if active_prompt:
+            # 使用激活的模板
+            prompt = active_prompt['content'].format(
+                user_input=user_input,
+                kg_results=json.dumps(kg_res, ensure_ascii=False, indent=2) if kg_res else "暂无图谱匹配",
+                vdb_results="".join(
+                    [f"片段 {i + 1}: {doc.page_content[:300]}... [来源]({doc.metadata.get('source', '无来源')})\n\n" for
+                     i, doc in enumerate(vdb_res)]) if vdb_res else "暂无向量匹配",
+                current_date=datetime.now().strftime("%Y-%m-%d"),
+                user_name="用户"  # 这里可以根据实际情况替换
+            )
+        else:
+            # 使用默认模板
+            prompt = f"""你是一名健康知识助手，请基于下面用户的健康画像与知识图谱结果，用专业的语句推送出**个性化健康知识**，要求：
 
----
+    - 仅围绕用户 **真实健康状况** 与 **知识图谱中的有效信息**
+    - 分点推送出有关系的健康知识，并且要明确标注每个知识点的来源网址
+    - 要求推送的健康知识与用户的健康状况、知识图谱有效信息强相关
+    - 可以稍微给出在*饮食、运动、用药、复查、注意事项等具体可操作建议
+    - 以 Markdown 格式输出，可含小标题、列表、表情符号
+    - **重要**：在每个知识点后面必须用 [来源](URL) 的格式标注来源链接，URL 必须完整可点击
 
-### 🔍 知识图谱匹配结果
-{json.dumps(kg_res, ensure_ascii=False, indent=2) if kg_res else "暂无图谱匹配"}
+    ---
+    ### 👤 用户健康画像
+    {user_input}
 
----
+    ---
 
-### 📄 相关文档片段
-{chr(10).join([doc.page_content[:300] + "..." for doc in vdb_res]) if vdb_res else "暂无向量匹配"}
+    ### 🔍 知识图谱匹配结果
+    {json.dumps(kg_res, ensure_ascii=False, indent=2) if kg_res else "暂无图谱匹配"}
 
----
+    ---
 
-请开始生成 **专属健康知识推送**：
-"""
+    ### 📄 相关文档片段
+    {"".join([f"片段 {i + 1}: {doc.page_content[:300]}... [来源]({doc.metadata.get('source', '无来源')})"+os.linesep for i, doc in enumerate(vdb_res)]) if vdb_res else "暂无向量匹配"}
+
+    ---
+
+    请开始生成 **专属健康知识推送**，确保每个知识点都有明确的来源标注：
+    """
 
         # 4️⃣ 调用大模型
         resp = self.openai_client.chat.completions.create(
             model="qwen-plus",
             messages=[
-                {"role": "system", "content": "你是医学健康知识助手，基于患者的健康画像和附加的相关信息，向患者输出结构化健康知识，要求详细、精准。"},
+                {"role": "system",
+                 "content": "你是医学健康知识助手，基于患者的健康画像和附加的相关信息，向患者输出结构化健康知识，要求详细、精准，并且必须为每个知识点标注完整可点击的来源URL。"},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=self.max_tokens,
@@ -95,8 +115,35 @@ class GraphRAGSystem:
         return {
             "answer": answer,
             "kg_results": kg_res,
-            "vdb_results": [d.page_content[:300] + "..." for d in vdb_res]
+            "vdb_results": [d.page_content[:300] + "..." for d in vdb_res],
+            "prompt_used": active_prompt['name'] if active_prompt else "默认模板"
         }
+
+    def get_active_prompt_template(self):
+        """获取当前激活的Prompt模板"""
+        try:
+            import sqlite3
+            import os
+            from config import config
+
+            conn = sqlite3.connect(config.SQLITE_DB_PATH)
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+
+            c.execute('SELECT * FROM prompt_templates WHERE is_active = 1')
+            active_template = c.fetchone()
+            conn.close()
+
+            if active_template:
+                return {
+                    'id': active_template['id'],
+                    'name': active_template['name'],
+                    'content': active_template['content']
+                }
+        except Exception as e:
+            print(f"获取激活Prompt模板失败: {str(e)}")
+
+        return None
 
     def update_knowledge_base(self, file_pattern: str) -> bool:
         """
@@ -226,17 +273,15 @@ class GraphRAGSystem:
         # 3. 添加向量检索结果
         if vdb_results:
             prompt += "\n\n## 相关文档片段:\n"
-
-            # 限制结果数量
             vdb_results = vdb_results[:self.max_vdb_results]
-
             for i, doc in enumerate(vdb_results):
+                source = doc.metadata.get('source', '未知')
+                url = source if source.startswith('http') else f"file://{source}"
                 content = doc.page_content.strip()
-                # 截断过长的内容
                 if len(content) > 500:
                     content = content[:250] + " ... " + content[-250:]
-
-                prompt += f"\n片段 {i + 1}:\n{content}\n"
+                prompt += f"\n**片段 {i+1}**  \n{content}  \n"
+                prompt += f"📎 [查看原文]({url})  \n"
         else:
             prompt += "\n\n## 相关文档片段: 未找到相关信息\n"
 
