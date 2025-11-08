@@ -36,6 +36,7 @@
     .status-indicator {
         display: none;
     }
+
 </style>
 {% endblock %}
 
@@ -64,6 +65,10 @@
                 <a href="{{ url_for('knowledge_graph') }}" class="nav-link d-block p-2 mb-2 rounded">
                     <i class="fas fa-project-diagram me-2"></i>
                     <span>知识图谱管理</span>
+                </a>
+                                <a href="{{ url_for('prompt_templates_management') }}" class="nav-link">
+                    <i class="fas fa-code"></i>
+                    <span>Prompt模板管理</span>
                 </a>
             </div>
 
@@ -130,26 +135,26 @@
                     </div>
                 </div>
             </div>
-<!-- 在 action-bar 部分添加修复按钮 -->
-<div class="action-bar">
-    <button class="btn btn-primary" id="addDocumentBtn">
-        <i class="fas fa-plus-circle me-2"></i>新增文档
-    </button>
-    <div class="action-group">
-        <button class="btn btn-outline" id="fixPathsBtn">
-            <i class="fas fa-wrench me-2"></i>修复文件路径
-        </button>
-        <button class="btn btn-outline">
-            <i class="fas fa-sync-alt me-2"></i>刷新
-        </button>
-        <button class="btn btn-outline">
-            <i class="fas fa-filter me-2"></i>筛选
-        </button>
-        <button class="btn btn-outline">
-            <i class="fas fa-download me-2"></i>导出
-        </button>
-    </div>
-</div>
+            <!-- 在 action-bar 部分添加修复按钮 -->
+            <div class="action-bar">
+                <button class="btn btn-primary" id="addDocumentBtn">
+                    <i class="fas fa-plus-circle me-2"></i>新增文档
+                </button>
+                <div class="action-group">
+                    <button class="btn btn-outline" id="fixPathsBtn">
+                        <i class="fas fa-wrench me-2"></i>修复文件路径
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-sync-alt me-2"></i>刷新
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-filter me-2"></i>筛选
+                    </button>
+                    <button class="btn btn-outline">
+                        <i class="fas fa-download me-2"></i>导出
+                    </button>
+                </div>
+            </div>
             <!-- 知识库文件列表 -->
             <div class="knowledge-files">
                 <div class="table-responsive">

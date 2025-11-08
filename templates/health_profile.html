@@ -5,109 +5,167 @@
 
 {% block content %}
 <div class="health-container">
-  <!-- 导航栏 -->
-  <nav class="health-nav">
-    <div class="nav-logo"><i class="fas fa-book-medical"></i> 健康画像</div>
-    <div class="nav-links">
-      <a href="#" class="active">健康画像</a>
-      <a href="{{ url_for('diagnosis') }}">知识推送</a>
-      <a href="{{ url_for('admin_login') }}">后台管理</a>
-      <a href="{{ url_for('logout') }}">退出登录</a>
-    </div>
-  </nav>
-
-  <!-- 欢迎横幅 -->
-  <div class="welcome-banner">
-    <h1>欢迎回来，{{ health_data.name }}</h1>
-    <p>您的全面健康档案已同步更新</p>
-  </div>
-
-  <!-- 刷新控制 -->
-  <div class="refresh-controls">
-    <label class="switch">
-      <input type="checkbox" id="autoRefreshToggle" checked>
-      <span class="slider"></span>
-    </label>
-    <span class="text">30 秒自动刷新</span>
-    <button id="manualRefreshBtn" class="btn-outline"><i class="fas fa-sync-alt"></i></button>
-  </div>
-
-  <!-- 信息卡片 -->
-  <section class="health-cards">
-    <!-- 个人信息 -->
-    <div class="card neon-border">
-      <h2><i class="fas fa-user"></i> 个人信息</h2>
-      <div class="info-grid">
-        {% for key, label in [('name','姓名'),('phone','手机号'),('age','年龄'),('gender','性别'),('ethnicity','民族'),('occupation','职业'),('main_activity','主业'),('education','文化程度'),('employment','就业'),('marital_status','婚姻')] %}
-        <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span></div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- 身体指标 -->
-    <div class="card neon-border">
-      <h2><i class="fas fa-heartbeat"></i> 身体指标</h2>
-      <div class="info-grid">
-        {% for key, label in [('height','身高'),('weight','体重'),('bmi','BMI'),('systolic_bp','收缩压'),('diastolic_bp','舒张压'),('bp_measure_time','测量时间'),('is_smoker','吸烟'),('is_drinker','饮酒'),('regular_exercise','运动')] %}
-        <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span></div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- 健康状态 -->
-    <div class="card neon-border">
-      <h2><i class="fas fa-stethoscope"></i> 健康状态</h2>
-      <div class="info-grid">
-        {% for key, label in [('conditions','主诊断'),('allergies','过敏史'),('disease_history','疾病史'),('family_history','家族史'),('surgery_history','手术史'),('medications','用药')] %}
-        <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span></div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-
-  <!-- 时间线 -->
-  <section class="medical-timeline">
-    <h2><i class="fas fa-history"></i> 就诊记录</h2>
-    <div class="timeline">
-      {% for record in medical_records %}
-      <div class="timeline-item">
-        <div class="timeline-date">{{ record.date }}</div>
-        <div class="timeline-content">
-          <div class="timeline-title">{{ record.department }} - {{ record.doctor }}</div>
-          <div class="timeline-desc">{{ record.description }}</div>
+    <!-- 导航栏 -->
+    <nav class="health-nav">
+        <div class="nav-logo"><i class="fas fa-book-medical"></i> 健康画像</div>
+        <div class="nav-links">
+            <a href="#" class="active">健康画像</a>
+            <a href="{{ url_for('diagnosis') }}">知识推送</a>
+            <a href="{{ url_for('admin_login') }}">后台管理</a>
+            <a href="{{ url_for('profile_settings') }}"><i class="fas fa-cog"></i> 个人设置</a>
+            <a href="{{ url_for('logout') }}">退出登录</a>
         </div>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
+    </nav>
 
-  <!-- 健康指标 -->
-  <section class="metrics-table">
-    <h2><i class="fas fa-chart-bar"></i> 近期指标</h2>
+    <!-- 欢迎横幅 -->
+    <div class="welcome-banner">
+        <h1>欢迎回来，{{ health_data.name }}</h1>
+        <p>您的全面健康档案已同步更新</p>
+    </div>
+
+    <!-- 刷新控制 -->
+    <div class="refresh-controls">
+        <label class="switch">
+            <input type="checkbox" id="autoRefreshToggle" checked>
+            <span class="slider"></span>
+        </label>
+        <span class="text">30 秒自动刷新</span>
+        <button id="manualRefreshBtn" class="btn-outline"><i class="fas fa-sync-alt"></i></button>
+    </div>
+
+    <!-- 信息卡片 -->
+    <section class="health-cards">
+        <!-- 个人信息 -->
+        <div class="card neon-border">
+            <h2><i class="fas fa-user"></i> 个人信息</h2>
+            <div class="info-grid">
+                {% for key, label in
+                [('name','姓名'),('phone','手机号'),('age','年龄'),('gender','性别'),('ethnicity','民族'),('occupation','职业'),('education','文化程度'),('marital_status','婚姻')]
+                %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 身体指标 -->
+        <div class="card neon-border">
+            <h2><i class="fas fa-heartbeat"></i> 身体指标</h2>
+            <div class="info-grid">
+                {% for key, label in
+                [('height','身高'),('weight','体重'),('bmi','BMI'),('systolic_bp','收缩压'),('diastolic_bp','舒张压'),('bp_measure_time','测量时间'),('is_smoker','吸烟'),('is_drinker','饮酒'),('regular_exercise','运动频率')]
+                %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 健康状态 -->
+        <div class="card neon-border">
+            <h2><i class="fas fa-stethoscope"></i> 健康状态</h2>
+            <div class="info-grid">
+                {% for key, label in
+                [('conditions','主诊断'),('allergies','过敏史'),('disease_history','疾病史'),('family_history','家族史'),('surgery_history','手术史'),('medications','用药')]
+                %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 时间线 -->
+    <section class="medical-timeline">
+        <h2><i class="fas fa-history"></i> 就诊记录</h2>
+        <div class="timeline">
+            {% for record in medical_records %}
+            <div class="timeline-item">
+                <div class="timeline-date">{{ record.date }}</div>
+                <div class="timeline-content">
+                    <div class="timeline-title">{{ record.department }} - {{ record.doctor }}</div>
+                    <div class="timeline-desc">{{ record.description }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+<!-- 健康指标 -->
+<section class="metrics-table">
+    <h2><i class="fas fa-chart-bar"></i> 健康指标</h2>
+
+    <!-- 时间筛选控件 -->
+    <div class="filter-controls" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+        <div class="filter-group">
+            <label for="startDate" style="color: var(--text-dim); margin-right: 8px;">开始日期:</label>
+            <input type="date" id="startDate" class="filter-input" style="
+                background: var(--glass);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: var(--text);
+                font-family: inherit;
+            ">
+        </div>
+        <div class="filter-group">
+            <label for="endDate" style="color: var(--text-dim); margin-right: 8px;">结束日期:</label>
+            <input type="date" id="endDate" class="filter-input" style="
+                background: var(--glass);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: var(--text);
+                font-family: inherit;
+            ">
+        </div>
+        <button id="filterBtn" class="btn-outline" style="padding: 8px 16px;">
+            <i class="fas fa-filter"></i> 筛选
+        </button>
+        <button id="resetFilterBtn" class="btn-outline" style="padding: 8px 16px;">
+            <i class="fas fa-redo"></i> 重置
+        </button>
+    </div>
+
     <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr><th>项目</th><th>结果</th><th>参考范围</th><th>单位</th><th>日期</th><th>状态</th></tr>
-        </thead>
-        <tbody>
-          {% for metric in check_metrics %}
-          <tr>
-            <td>{{ metric.item }}</td>
-            <td>{{ metric.result }}</td>
-            <td>{{ metric.range }}</td>
-            <td>{{ metric.unit }}</td>
-            <td>{{ metric.date }}</td>
-            <td><span class="status {{ metric.status }}">{{ metric.status }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        <table id="metricsTable">
+            <thead>
+                <tr>
+                    <th>项目</th>
+                    <th>结果</th>
+                    <th>参考范围</th>
+                    <th>单位</th>
+                    <th>日期</th>
+                    <th>状态</th>
+                </tr>
+            </thead>
+            <tbody id="metricsBody">
+                <!-- 动态加载内容 -->
+            </tbody>
+        </table>
     </div>
-  </section>
 
-  <footer>
-    <p>© 2025 健康知识平台 · 您的健康数据已加密</p>
-  </footer>
+    <!-- 分页控件 -->
+    <div class="pagination" id="pagination" style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 10px;
+        color: var(--text-dim);
+    ">
+        <!-- 动态生成分页 -->
+    </div>
+
+    <!-- 加载状态 -->
+    <div id="loadingIndicator" style="text-align: center; padding: 20px; color: var(--text-dim);">
+        <i class="fas fa-spinner fa-spin"></i> 加载中...
+    </div>
+</section>
+
+    <footer>
+        <p>© 2025 健康知识平台 · 您的健康数据已加密</p>
+    </footer>
 </div>
 <script src="{{ url_for('static', filename='js/health_profile.js') }}"></script>
 {% endblock %}

@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/health_profile.css') }}">
+<style>
+.profile-container {
+    max-width: 600px;
+    margin: 40px auto;
+    background: var(--glass);
+    padding: 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.profile-header h2 {
+    color: var(--text);
+    font-size: 28px;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.profile-header p {
+    color: var(--text-dim);
+    font-size: 16px;
+}
+
+.profile-form {
+    margin-top: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2575fc;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: #fff;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37, 117, 252, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.password-note {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .profile-container {
+        margin: 20px;
+        padding: 20px;
+    }
+
+    .profile-header h2 {
+        font-size: 24px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="health-container">
+    <!-- 导航栏 -->
+    <nav class="health-nav">
+        <div class="nav-logo"><i class="fas fa-user-cog"></i> 个人设置</div>
+        <div class="nav-links">
+            <a href="{{ url_for('health_profile') }}">健康画像</a>
+            <a href="{{ url_for('diagnosis') }}">知识推送</a>
+            <a href="{{ url_for('admin_login') }}">后台管理</a>
+            <a href="{{ url_for('profile_settings') }}" class="active"><i class="fas fa-cog"></i> 个人设置</a>
+            <a href="{{ url_for('logout') }}">退出登录</a>
+        </div>
+    </nav>
+
+    <!-- 欢迎横幅 -->
+    <div class="welcome-banner">
+        <h1>个人设置</h1>
+        <p>管理您的账户信息和安全设置</p>
+    </div>
+
+    <!-- 个人设置表单 -->
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2><i class="fas fa-user-edit"></i> 编辑个人信息</h2>
+            <p>更新您的个人资料和安全设置</p>
+        </div>
+
+        <form id="profileForm" class="profile-form">
+            <div class="form-group">
+                <label for="name"><i class="fas fa-user"></i> 姓名</label>
+                <input type="text" class="form-control" name="name" id="name" required
+                       placeholder="请输入您的姓名">
+            </div>
+
+            <div class="form-group">
+                <label for="phone"><i class="fas fa-phone"></i> 手机号</label>
+                <input type="tel" class="form-control" name="phone" id="phone" required
+                       placeholder="请输入您的手机号码">
+            </div>
+
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> 新密码</label>
+                <input type="password" class="form-control" name="password" id="password"
+                       placeholder="留空表示不修改密码">
+                <div class="password-note">如需修改密码，请在此输入新密码</div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-save"></i> 保存修改
+            </button>
+        </form>
+    </div>
+
+    <footer>
+        <p>© 2025 健康知识平台 · 您的个人信息已加密保护</p>
+    </footer>
+</div>
+
+<script>
+// 页面加载时获取用户信息
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取用户基本信息
+    fetch('/api/profile/basic')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络响应不正常');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                alert('获取用户信息失败: ' + data.error);
+                return;
+            }
+            // 填充表单数据
+            document.getElementById('name').value = data.name || '';
+            document.getElementById('phone').value = data.phone || '';
+        })
+        .catch(error => {
+            console.error('获取用户信息失败:', error);
+            alert('获取用户信息失败，请刷新页面重试');
+        });
+
+    // 表单提交处理
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        // 显示加载状态
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        submitBtn.disabled = true;
+
+        const payload = {
+            name: document.getElementById('name').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            password: document.getElementById('password').value || undefined
+        };
+
+        // 验证表单
+        if (!payload.name) {
+            alert('请输入姓名');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+
+        if (!payload.phone) {
+            alert('请输入手机号');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+
+        fetch('/api/profile/basic', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('个人信息更新成功！');
+                // 清空密码字段
+                document.getElementById('password').value = '';
+                // 可选：刷新页面以获取最新数据
+                // location.reload();
+            } else {
+                alert(result.error || '更新失败，请重试');
+            }
+        })
+        .catch(error => {
+            console.error('更新失败:', error);
+            alert('网络错误，请重试');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+});
+</script>
+{% endblock %}
