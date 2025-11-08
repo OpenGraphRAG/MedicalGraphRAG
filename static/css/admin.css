@@ -857,3 +857,1082 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 8px;
 }
+/* 健康指标表格样式 */
+#edit-metrics-table {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#edit-metrics-table th {
+    background: rgba(72, 219, 251, 0.1);
+    border: none;
+    color: var(--accent-4);
+    font-weight: 600;
+    padding: 12px 8px;
+}
+
+#edit-metrics-table td {
+    padding: 10px 8px;
+    border-color: rgba(255, 255, 255, 0.1);
+    vertical-align: middle;
+}
+
+#edit-metrics-table tr:hover {
+    background: rgba(72, 219, 251, 0.05);
+}
+
+/* 指标状态标签 */
+.badge-success {
+    background: #28a745;
+    color: white;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* 空状态样式 */
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* 知识图谱样式 */
+#kg-network-container {
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.empty-graph-message,
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-graph-message i,
+.error-message i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-graph-message h3,
+.error-message h3 {
+    color: var(--accent-4);
+    margin-bottom: 0.5rem;
+}
+
+/* 响应式表格 */
+.table-responsive {
+    border-radius: 8px;
+}
+
+/* 按钮组样式 */
+.btn-group-vertical .btn {
+    margin-bottom: 5px;
+}
+
+.btn-group-vertical .btn:last-child {
+    margin-bottom: 0;
+}
+/* 标签页样式 */
+.form-tabs {
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+    color: var(--accent-4);
+}
+
+.tab-button.active {
+    color: var(--accent-4);
+    border-bottom-color: var(--accent-4);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 表单网格布局 */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.form-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-4);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* 健康指标管理样式 */
+.metrics-management {
+    margin-top: 10px;
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.metrics-header h3 {
+    margin: 0;
+    color: var(--accent-4);
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.metrics-table th {
+    background: rgba(72, 219, 251, 0.1);
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--accent-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metrics-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metrics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.metrics-table tr:hover {
+    background: rgba(72, 219, 251, 0.05);
+}
+
+/* 无数据提示样式 */
+.no-data-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.no-data-message i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.no-data-message p {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+}
+
+/* 按钮样式 */
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-4);
+}
+
+.btn-edit:hover {
+    color: #ffc107;
+}
+
+.btn-delete:hover {
+    color: #dc3545;
+}
+
+/* 徽章样式 */
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.badge-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+/* 高亮动画 */
+@keyframes highlight {
+    0% { background-color: rgba(72, 219, 251, 0.1); }
+    100% { background-color: transparent; }
+}
+
+.highlight {
+    animation: highlight 1s ease;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tab-buttons {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .metrics-table {
+        font-size: 14px;
+    }
+
+    .metrics-table th,
+    .metrics-table td {
+        padding: 8px 10px;
+    }
+}
+/* 模态框修复 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--card-bg);
+    margin: 2% auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.3s ease;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 防止模态框内容点击时关闭 */
+.modal-content {
+    pointer-events: auto;
+}
+
+/* 按钮交互反馈 */
+.btn, .btn-icon {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:active, .btn-icon:active {
+    transform: scale(0.98);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* 健康指标表格按钮样式修复 */
+.metrics-table .btn-icon {
+    margin: 0 2px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.metrics-table .btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+/* 表单提交按钮样式 */
+.modal-footer .btn {
+    min-width: 100px;
+}
+
+/* 标签页激活状态 */
+.tab-button.active {
+    position: relative;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent-4);
+}
+
+/* 加载状态 */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 12px;
+}
+
+/* 错误状态 */
+.error-state {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* 成功状态 */
+.success-state {
+    border-color: #28a745 !important;
+    background: rgba(40, 167, 69, 0.1) !important;
+}
+
+/* 响应式修复 */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 5% auto;
+        width: 95%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* 标签页样式修复 */
+.form-tabs {
+    margin-bottom: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px 8px 0 0;
+    padding: 0 10px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    margin: 0;
+}
+
+.tab-button:hover {
+    color: var(--accent-4);
+    background: rgba(72, 219, 251, 0.05);
+}
+
+.tab-button.active {
+    color: var(--accent-4);
+    border-bottom-color: var(--accent-4);
+    background: rgba(72, 219, 251, 0.1);
+}
+
+.tab-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.3);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    padding: 0 5px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 标签页内容区域样式 */
+.tab-content .form-grid {
+    padding: 10px 0;
+}
+
+.tab-content .metrics-management {
+    padding: 10px 0;
+}
+
+/* 健康指标管理头部 */
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.metrics-header h3 {
+    margin: 0;
+    color: var(--accent-4);
+    font-size: 18px;
+}
+
+/* 标签页响应式设计 */
+@media (max-width: 768px) {
+    .tab-buttons {
+        flex-wrap: wrap;
+        padding: 5px;
+    }
+
+    .tab-button {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 15px;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .metrics-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .metrics-header h3 {
+        text-align: center;
+    }
+}
+
+/* 标签页内容动画 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 确保模态框内容正确显示 */
+.modal-body {
+    padding: 20px;
+}
+
+/* 修复表单组在标签页内的显示 */
+.tab-content .form-group {
+    margin-bottom: 20px;
+}
+
+.tab-content .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+.tab-content .form-group input,
+.tab-content .form-group select,
+.tab-content .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.tab-content .form-group input:focus,
+.tab-content .form-group select:focus,
+.tab-content .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-4);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.2);
+}
+
+/* 健康指标表格在标签页内的样式 */
+.tab-content .metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tab-content .metrics-table th {
+    background: rgba(72, 219, 251, 0.1);
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--accent-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+}
+
+.tab-content .metrics-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.tab-content .metrics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.tab-content .metrics-table tr:hover {
+    background: rgba(72, 219, 251, 0.05);
+}
+
+/* 无数据提示在标签页内的样式 */
+.tab-content .no-data-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+}
+
+.tab-content .no-data-message i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.tab-content .no-data-message p {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+}
+
+/* 确保全宽表单组正确显示 */
+.tab-content .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+/* 文本区域在标签页内的样式 */
+.tab-content .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: inherit;
+}
+/* 修复模态框尺寸和布局 */
+.modal-content {
+    position: relative;
+    background: var(--card-bg);
+    margin: 2% auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-height: 90vh;
+    overflow: hidden;
+    width: 90%;
+    max-width: 1200px;
+}
+
+.modal-content.large-modal {
+    width: 95%;
+    max-width: 1400px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--accent-4);
+    font-size: 1.5rem;
+}
+
+.modal-body {
+    padding: 25px 30px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+/* 标签页样式修复 */
+.form-tabs {
+    margin-bottom: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-buttons {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px 8px 0 0;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 15px 25px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    position: relative;
+    margin: 0;
+}
+
+.tab-button:hover {
+    color: var(--accent-4);
+    background: rgba(72, 219, 251, 0.05);
+}
+
+.tab-button.active {
+    color: var(--accent-4);
+    border-bottom-color: var(--accent-4);
+    background: rgba(72, 219, 251, 0.1);
+}
+
+.tab-content {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 表单网格布局优化 */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    height: 100%;
+}
+
+.form-grid.compact {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 0;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-4);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.2);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* 健康指标管理样式优化 */
+.metrics-management {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+}
+
+.metrics-header h3 {
+    margin: 0;
+    color: var(--accent-4);
+    font-size: 18px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.05);
+    flex: 1;
+}
+
+.metrics-table th {
+    background: rgba(72, 219, 251, 0.1);
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--accent-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.metrics-table td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.metrics-table tr:last-child td {
+    border-bottom: none;
+}
+
+.metrics-table tr:hover {
+    background: rgba(72, 219, 251, 0.05);
+}
+
+/* 按钮样式优化 */
+.btn {
+    padding: 12px 24px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: var(--accent-4);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(72, 219, 251, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.btn-edit:hover {
+    color: #ffc107;
+}
+
+.btn-delete:hover {
+    color: #dc3545;
+}
+
+/* 无数据提示样式 */
+.no-data-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 2px dashed rgba(255, 255, 255, 0.1);
+    margin: 20px 0;
+    flex: 1;
+}
+
+.no-data-message i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.no-data-message p {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+}
+
+/* 徽章样式 */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.badge-success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.badge-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .modal-content.large-modal {
+        width: 98%;
+        margin: 1% auto;
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+
+    .modal-content.large-modal {
+        width: 98%;
+        height: 95vh;
+    }
+
+    .modal-body {
+        padding: 15px 20px;
+    }
+
+    .tab-buttons {
+        flex-wrap: wrap;
+    }
+
+    .tab-button {
+        flex: 1;
+        min-width: 120px;
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

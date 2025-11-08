@@ -215,3 +215,118 @@ body {
   .glass { padding: 25px; }
   .neon-title { font-size: 2.2rem; }
 }
+
+/* 在 diagnosis.css 末尾添加以下样式 */
+
+/* 加载动画增强 */
+.loading-animation {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-text h3 {
+  color: var(--primary);
+  margin: 25px 0 15px;
+  font-size: 1.4rem;
+  text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+}
+
+.loading-text p {
+  color: var(--text-dim);
+  margin: 8px 0;
+  font-size: 1.1rem;
+}
+
+.loading-sub {
+  font-size: 0.95rem;
+  opacity: 0.7;
+  animation: pulse 2s infinite;
+}
+
+/* 结果区域样式 */
+.result-header {
+  text-align: center;
+  margin-bottom: 35px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid var(--glass-border);
+  background: linear-gradient(135deg, rgba(0,245,255,0.1), rgba(255,0,255,0.05));
+  border-radius: 15px;
+  padding: 25px;
+}
+
+.result-header h3 {
+  color: var(--primary);
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.result-subtitle {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+.knowledge-content {
+  line-height: 1.9;
+  font-size: 1.15rem;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.result-footer {
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid var(--glass-border);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+/* 链接样式增强 */
+.knowledge-content a {
+  color: var(--secondary);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--secondary);
+  transition: all 0.3s ease;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(255,0,255,0.1);
+}
+
+.knowledge-content a:hover {
+  color: var(--primary);
+  border-bottom: 1px solid var(--primary);
+  background: rgba(0,245,255,0.1);
+  box-shadow: 0 0 8px rgba(0,245,255,0.3);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .loading-animation {
+    padding: 25px 15px;
+  }
+
+  .loading-text h3 {
+    font-size: 1.2rem;
+  }
+
+  .result-header {
+    padding: 20px 15px;
+    margin-bottom: 25px;
+  }
+
+  .result-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .knowledge-content {
+    padding: 20px 15px;
+    font-size: 1.05rem;
+  }
+}

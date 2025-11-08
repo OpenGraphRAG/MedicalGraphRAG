@@ -581,3 +581,365 @@ body {
 .empty-graph-message button {
     margin-top: 10px;
 }
+/* 在原有CSS基础上添加以下样式 */
+
+/* 搜索框样式 */
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    width: 300px;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    width: 400px;
+}
+
+/* 查询按钮组 */
+.query-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* 动态图例样式 */
+.kg-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.legend-section {
+    margin-bottom: 15px;
+}
+
+.legend-section:last-child {
+    margin-bottom: 0;
+}
+
+.legend-section h4 {
+    color: var(--accent-4);
+    margin-bottom: 10px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.legend-item:last-child {
+    margin-bottom: 0;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.color-line {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+    margin-right: 8px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.legend-label {
+    flex: 1;
+    font-weight: 500;
+}
+
+.legend-count {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+}
+
+/* 节点详情面板 */
+.node-details-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(26, 26, 46, 0.95);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 320px;
+    max-height: 500px;
+    z-index: 10;
+    overflow: hidden;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: rgba(72, 219, 251, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: var(--accent-4);
+    font-size: 16px;
+}
+
+.panel-content {
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.node-info h4 {
+    color: var(--accent-4);
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item.full-width {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+}
+
+.info-item span {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.connected-info {
+    margin-top: 20px;
+}
+
+.connected-info h5 {
+    color: var(--accent-4);
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.relations-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.relation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+}
+
+.relation-direction {
+    color: var(--accent-4);
+    font-weight: bold;
+    width: 20px;
+    text-align: center;
+}
+
+.relation-type {
+    background: rgba(72, 219, 251, 0.2);
+    color: var(--accent-4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+.relation-target {
+    color: var(--text);
+    flex: 1;
+}
+
+.no-relations {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    padding: 20px;
+}
+
+/* 工具提示样式 */
+.node-tooltip {
+    background: rgba(26, 26, 46, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.node-tooltip strong {
+    color: var(--accent-4);
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* 控制按钮组 */
+.kg-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10;
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeIn 0.8s ease;
+}
+
+.kg-controls .btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--accent-4);
+}
+
+.kg-controls .btn-icon:hover {
+    background: var(--accent-4);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* 空状态和错误状态 */
+.empty-graph-message,
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.empty-graph-message i,
+.error-message i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-graph-message h3,
+.error-message h3 {
+    color: var(--accent-4);
+    margin-bottom: 0.5rem;
+}
+
+.empty-graph-message button,
+.error-message button {
+    margin-top: 1rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .kg-legend {
+        position: relative;
+        bottom: unset;
+        right: unset;
+        margin-top: 20px;
+        max-width: 100%;
+        max-height: 200px;
+    }
+
+    .node-details-panel {
+        position: relative;
+        top: unset;
+        left: unset;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .search-box input {
+        width: 200px;
+    }
+
+    .search-box input:focus {
+        width: 250px;
+    }
+
+    .query-buttons {
+        flex-wrap: wrap;
+    }
+}
+
+/* 滚动条样式 */
+.kg-legend::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar,
+.relations-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kg-legend::-webkit-scrollbar-track,
+.panel-content::-webkit-scrollbar-track,
+.relations-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.kg-legend::-webkit-scrollbar-thumb,
+.panel-content::-webkit-scrollbar-thumb,
+.relations-list::-webkit-scrollbar-thumb {
+    background: var(--accent-4);
+    border-radius: 3px;
+}
+
+.kg-legend::-webkit-scrollbar-thumb:hover,
+.panel-content::-webkit-scrollbar-thumb:hover,
+.relations-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
