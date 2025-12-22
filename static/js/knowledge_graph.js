@@ -1,3 +1,484 @@
+window.toggleFullscreen = toggleFullscreen;
+window.exitFullscreen = exitFullscreen;
+window.showSingleNodeQuery = showSingleNodeQuery;
+window.showMultiHopQuery = showMultiHopQuery;
+window.showTripleQuery = showTripleQuery;
+window.changeLayout = changeLayout;
+window.updateTripleCount = updateTripleCount;
+
+// SweetAlert2 全局配置
+document.addEventListener('DOMContentLoaded', function() {
+    // 配置 SweetAlert2 默认参数
+    if (typeof Swal !== 'undefined') {
+        Swal.mixin({
+            background: 'rgba(26, 26, 46, 0.95)',
+            color: '#fff',
+            confirmButtonColor: '#48dbfb',
+            cancelButtonColor: '#6c757d',
+            customClass: {
+                popup: 'kg-swal-popup'
+            }
+        });
+    }
+
+    // 初始化图谱
+    initKnowledgeGraph();
+});
+
+// 全屏状态管理
+let isFullscreen = false;
+let originalParent = null;
+let fullscreenContainer = null;
+let networkInstance = null; // 存储网络实例引用
+
+// 全屏切换功能
+function toggleFullscreen() {
+    const container = document.getElementById('kg-network-container');
+
+    if (!isFullscreen) {
+        enterFullscreen(container);
+    } else {
+        exitFullscreen();
+    }
+}
+
+function enterFullscreen(element) {
+    isFullscreen = true;
+    originalParent = element.parentNode;
+    networkInstance = network; // 保存当前网络实例
+
+    // 创建全屏容器
+    fullscreenContainer = document.createElement('div');
+    fullscreenContainer.id = 'kg-fullscreen-container';
+    fullscreenContainer.className = 'kg-fullscreen';
+
+    // 构建全屏界面HTML
+    fullscreenContainer.innerHTML = `
+        <!-- 顶部中央查询控制区 -->
+        <div class="fullscreen-top-controls">
+            <div class="query-section">
+                <button class="btn btn-outline" id="fs-single-node-btn">
+                    <i class="fas fa-search"></i> 节点查询
+                </button>
+                <button class="btn btn-outline" id="fs-multi-hop-btn">
+                    <i class="fas fa-route"></i> 多跳查询
+                </button>
+                <button class="btn btn-outline" id="fs-triple-btn">
+                    <i class="fas fa-project-diagram"></i> 三元组查询
+                </button>
+            </div>
+        </div>
+
+        <!-- 左侧布局控制区 -->
+        <div class="fullscreen-left-controls">
+            <h4>布局控制</h4>
+            <div class="layout-buttons">
+                <button class="btn btn-sm btn-outline active" data-layout="forceAtlas2Based">
+                    <i class="fas fa-project-diagram"></i> 力导向
+                </button>
+                <button class="btn btn-sm btn-outline" data-layout="hierarchical">
+                    <i class="fas fa-sitemap"></i> 层次
+                </button>
+                <button class="btn btn-sm btn-outline" data-layout="circular">
+                    <i class="fas fa-circle"></i> 环形
+                </button>
+                <button class="btn btn-sm btn-outline" data-layout="random">
+                    <i class="fas fa-random"></i> 随机
+                </button>
+            </div>
+        </div>
+
+        <!-- 左下角三元组数量控制 -->
+        <div class="fullscreen-bottom-left">
+            <div class="triple-count-control">
+                <label>显示三元组数量</label>
+                <input type="range" id="tripleCountSlider" min="50" max="500" value="100">
+                <div id="tripleCountValue">100</div>
+            </div>
+        </div>
+
+        <!-- 退出全屏按钮 -->
+        <button class="btn btn-danger fullscreen-exit" id="fullscreen-exit-btn">
+            <i class="fas fa-compress"></i> 退出全屏
+        </button>
+
+        <!-- 图谱容器 -->
+        <div id="kg-network-container-fullscreen" style="width:100%;height:100%;"></div>
+
+        <!-- 详情面板 -->
+        <div class="node-details-panel" id="nodeDetailsPanelFullscreen" style="display:none;">
+            <div class="panel-header">
+                <h3 id="panelTitleFullscreen">节点详情</h3>
+                <button class="btn-icon close-panel" onclick="closeNodeDetails()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="panel-content" id="nodeDetailsContentFullscreen"></div>
+        </div>
+    `;
+
+    document.body.appendChild(fullscreenContainer);
+
+    // 移动网络容器到全屏区域
+    fullscreenContainer.querySelector('#kg-network-container-fullscreen').appendChild(element);
+
+    // 绑定事件（关键修复：使用addEventListener而不是onclick）
+    document.getElementById('fullscreen-exit-btn').addEventListener('click', exitFullscreen);
+    document.getElementById('fs-single-node-btn').addEventListener('click', showSingleNodeQuery);
+    document.getElementById('fs-multi-hop-btn').addEventListener('click', showMultiHopQuery);
+    document.getElementById('fs-triple-btn').addEventListener('click', showTripleQuery);
+    document.getElementById('tripleCountSlider').addEventListener('input', function() {
+        updateTripleCount(this.value);
+    });
+
+    // 绑定布局按钮事件
+    fullscreenContainer.querySelectorAll('.layout-buttons .btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const layout = this.dataset.layout;
+            // 更新active状态
+            fullscreenContainer.querySelectorAll('.layout-buttons .btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            changeLayout(layout);
+        });
+    });
+
+    // 请求浏览器全屏
+    if (fullscreenContainer.requestFullscreen) {
+        fullscreenContainer.requestFullscreen().catch(err => {
+            console.log('全屏请求失败:', err);
+        });
+    } else if (fullscreenContainer.webkitRequestFullscreen) {
+        fullscreenContainer.webkitRequestFullscreen();
+    } else if (fullscreenContainer.msRequestFullscreen) {
+        fullscreenContainer.msRequestFullscreen();
+    }
+
+    // 重新初始化网络
+    setTimeout(() => {
+        if (networkInstance) {
+            networkInstance.fit();
+            networkInstance.redraw();
+        }
+    }, 100);
+}
+function cleanupFullscreen() {
+    // 恢复网络容器到原始位置
+    if (originalParent && fullscreenContainer) {
+        const element = fullscreenContainer.querySelector('#kg-network-container-fullscreen');
+        originalParent.appendChild(element);
+        document.body.removeChild(fullscreenContainer);
+    }
+
+    // 清理变量
+    isFullscreen = false;
+    fullscreenContainer = null;
+    originalParent = null;
+    networkInstance = null;
+
+    // 重新初始化网络
+    setTimeout(() => {
+        if (network) {
+            network.fit();
+            network.redraw();
+        }
+    }, 100);
+}
+
+function exitFullscreen() {
+    if (!isFullscreen) return;
+
+    // 退出浏览器全屏（关键修复：确保在正确的上下文中调用）
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+            cleanupFullscreen();
+        }).catch(err => {
+            console.log('退出全屏失败:', err);
+            cleanupFullscreen();
+        });
+    } else {
+        cleanupFullscreen();
+    }
+}
+
+// 绑定全屏模式事件
+function bindFullscreenEvents() {
+    // 重新绑定节点点击事件
+    network.on('selectNode', function(params) {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            const node = network.body.data.nodes.get(String(nodeId));
+            showNodeDetailsFullscreen(node);
+        }
+    });
+
+    network.on('selectEdge', function(params) {
+        if (params.edges.length > 0) {
+            const edgeId = params.edges[0];
+            const edge = network.body.data.edges.get(edgeId);
+            showEdgeDetailsFullscreen(edge);
+        }
+    });
+}
+
+// 全屏模式显示节点详情
+function showNodeDetailsFullscreen(node) {
+    const panel = document.getElementById('nodeDetailsPanelFullscreen');
+    const content = document.getElementById('nodeDetailsContentFullscreen');
+
+    // 使用同普通模式的内容生成逻辑
+    fetch(`/api/entity_config/node/${node.id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const properties = data.node.properties || {};
+                const propsCount = Object.keys(properties).length;
+
+                let propsHtml = '';
+                if (propsCount === 0) {
+                    propsHtml = '<div class="no-properties">暂无属性</div>';
+                } else {
+                    const tabs = Object.keys(properties);
+                    propsHtml = `
+                        <div class="property-tabs">
+                            <div class="tab-nav">
+                                ${tabs.map((key, idx) => `
+                                    <button class="tab-nav-btn ${idx === 0 ? 'active' : ''}"
+                                            data-tab="fs-prop-${idx}">
+                                        ${key.substring(0, 10)}${key.length > 10 ? '...' : ''}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div class="tab-content-wrapper">
+                                ${tabs.map((key, idx) => `
+                                    <div class="tab-pane ${idx === 0 ? 'active' : ''}" id="fs-prop-${idx}">
+                                        <div class="property-item">
+                                            <span class="property-key">${key}:</span>
+                                            <span class="property-value" title="${properties[key]}">${properties[key]}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = `
+                    <div class="node-info">
+                        <h4>${node.label}</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>类型</label>
+                                <span>${node.type || '未知'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>ID</label>
+                                <span>${node.id}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="properties-section">
+                        <h5>属性列表 (${propsCount})</h5>
+                        ${propsHtml}
+                    </div>
+                `;
+
+                bindPropertyTabs();
+
+                panel.style.display = 'block';
+                panel.style.position = 'absolute';
+                panel.style.top = '80px';
+                panel.style.right = '30px';
+                panel.style.width = '420px';
+                panel.style.maxHeight = '85vh';
+                panel.style.zIndex = '1001';
+            }
+        });
+}
+
+// 全屏模式显示关系详情
+function showEdgeDetailsFullscreen(edge) {
+    // 实现类似 showNodeDetailsFullscreen 的逻辑
+    // 为简洁省略具体实现，可参考普通模式的 showEdgeDetails
+}
+
+// 查询功能实现
+function showSingleNodeQuery() {
+    Swal.fire({
+        title: '节点查询',
+        input: 'text',
+        inputPlaceholder: '输入节点名称',
+        showCancelButton: true,
+        confirmButtonText: '查询',
+        target: isFullscreen ? '#kg-fullscreen-container' : 'body',
+        preConfirm: (value) => {
+            if (!value) {
+                Swal.showValidationMessage('请输入节点名称');
+                return false;
+            }
+            return value;
+        }
+    }).then(result => {
+        if (result.isConfirmed && result.value) {
+            executeKGSearch(result.value);
+        }
+    });
+}
+
+function showMultiHopQuery() {
+    Swal.fire({
+        title: '多跳查询',
+        html: `
+            <input type="text" id="sourceNode" class="swal2-input" placeholder="源节点名称">
+            <input type="text" id="targetNode" class="swal2-input" placeholder="目标节点名称">
+            <input type="number" id="hopCount" class="swal2-input" placeholder="跳数 (1-5)" min="1" max="5">
+        `,
+        showCancelButton: true,
+        confirmButtonText: '查询',
+        target: isFullscreen ? '#kg-fullscreen-container' : 'body',
+        preConfirm: () => {
+            const source = document.getElementById('sourceNode').value;
+            const target = document.getElementById('targetNode').value;
+            const hops = document.getElementById('hopCount').value;
+
+            if (!source || !target || !hops) {
+                Swal.showValidationMessage('请填写所有字段');
+                return false;
+            }
+            return { source, target, hops: parseInt(hops) };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            executeMultiHopQuery(result.value.source, result.value.target, result.value.hops);
+        }
+    });
+}
+
+
+function showTripleQuery() {
+    Swal.fire({
+        title: '三元组查询',
+        html: `
+            <input type="text" id="headNode" class="swal2-input" placeholder="头节点 (可选)">
+            <input type="text" id="relation" class="swal2-input" placeholder="关系类型 (可选)">
+            <input type="text" id="tailNode" class="swal2-input" placeholder="尾节点 (可选)">
+            <small style="display:block; margin-top:10px; color:#6c757d;">
+                至少填写一个字段
+            </small>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '查询',
+        target: isFullscreen ? '#kg-fullscreen-container' : 'body',
+        preConfirm: () => {
+            const head = document.getElementById('headNode').value;
+            const relation = document.getElementById('relation').value;
+            const tail = document.getElementById('tailNode').value;
+
+            if (!head && !relation && !tail) {
+                Swal.showValidationMessage('请至少填写一个字段');
+                return false;
+            }
+            return { head, relation, tail };
+        }
+    }).then(result => {
+        if (result.isConfirmed) {
+            executeTripleQuery(result.value);
+        }
+    });
+}
+
+// 三元组数量控制
+function updateTripleCount(value) {
+    document.getElementById('tripleCountValue').textContent = value;
+    // 重新加载图谱数据
+    refreshGraphWithLimit(parseInt(value));
+}
+
+function refreshGraphWithLimit(limit) {
+    showLoading('正在重新加载图谱...');
+
+    fetch(`/api/kg_data?limit=${limit}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.nodes) {
+                renderGraph(data);
+                showSuccess(`已加载 ${limit} 个三元组`);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('加载图谱失败: ' + error.message);
+        });
+}
+
+// 布局控制
+function changeLayout(layoutType) {
+    if (!network) return;
+
+    // 配置布局选项
+    let options = {};
+    switch(layoutType) {
+        case 'hierarchical':
+            options = {
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        direction: 'UD',
+                        sortMethod: 'directed'
+                    }
+                }
+            };
+            break;
+        case 'circular':
+            applyCircularLayout();
+            return;
+        case 'random':
+            options = {
+                layout: {
+                    randomSeed: Math.floor(Math.random() * 1000)
+                }
+            };
+            break;
+        default: // forceAtlas2Based
+            options = {
+                physics: {
+                    solver: 'forceAtlas2Based'
+                }
+            };
+            break;
+    }
+
+    network.setOptions(options);
+    network.stabilize();
+}
+
+function applyCircularLayout() {
+    if (!network) return;
+
+    const nodes = network.body.data.nodes.get();
+    const nodeCount = nodes.length;
+    const radius = 300;
+
+    const positions = {};
+    nodes.forEach((node, index) => {
+        const angle = (2 * Math.PI * index) / nodeCount;
+        positions[node.id] = {
+            x: radius * Math.cos(angle),
+            y: radius * Math.sin(angle)
+        };
+    });
+
+    network.setData({
+        nodes: network.body.data.nodes,
+        edges: network.body.data.edges
+    });
+
+    // 手动设置位置
+    Object.keys(positions).forEach(nodeId => {
+        network.moveNode(nodeId, positions[nodeId].x, positions[nodeId].y);
+    });
+}
+
 // 知识图谱可视化管理
 let network = null;
 let container = null;
@@ -374,37 +855,30 @@ function renderGraph(data) {
         // 创建网络
         network = new vis.Network(container, graphData, options);
 
-        // 添加交互事件
-        network.on('hoverNode', function(params) {
-            container.style.cursor = 'pointer';
-            highlightConnectedNodes(params.node);
-        });
 
-        network.on('blurNode', function(params) {
-            container.style.cursor = 'default';
-            unhighlightAllNodes();
-        });
+    // 添加节点点击事件
+    network.on('selectNode', function(params) {
+        if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            const node = nodes.get(nodeId);
+            showNodeDetails(node);
+        }
+    });
 
-        network.on('selectNode', function(params) {
-            console.log('选中节点:', params.nodes);
-            if (params.nodes.length > 0) {
-                const nodeId = params.nodes[0];
-                const node = nodes.get(nodeId);
-                showNodeDetails(node);
-            }
-        });
+    // 添加关系点击事件
+    network.on('selectEdge', function(params) {
+        if (params.edges.length > 0) {
+            const edgeId = params.edges[0];
+            const edge = edges.get(edgeId);
+            showEdgeDetails(edge);
+        }
+    });
 
-        network.on('doubleClick', function(params) {
-            if (params.nodes.length > 0) {
-                const nodeId = params.nodes[0];
-                const node = nodes.get(nodeId);
-                showNodeDetails(node);
-            } else if (params.edges.length > 0) {
-                const edgeId = params.edges[0];
-                const edge = edges.get(edgeId);
-                showEdgeDetails(edge);
-            }
-        });
+    // 移除 hover 事件（不再显示临时卡片）
+    // network.on("hoverNode", function(params) { ... }); // 已删除
+    // network.on("hoverEdge", function(params) { ... }); // 已删除
+    // network.on("blurNode", function(params) { ... }); // 已删除
+    // network.on("blurEdge", function(params) { ... }); // 已删除
 
         network.on('afterDrawing', function(ctx) {
             // 可选的后期绘制效果
@@ -454,9 +928,9 @@ function lightenColor(color, amount) {
     const B = (num & 0x0000FF) + amt;
     return '#' + (
         0x1000000 +
-        (R < 255 ? R : 255) * 0x10000 +
-        (G < 255 ? G : 255) * 0x100 +
-        (B < 255 ? B : 255)
+        (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)
     ).toString(16).slice(1);
 }
 
@@ -529,66 +1003,89 @@ function showNodeDetails(node) {
 
     if (!panel || !content) return;
 
-    content.innerHTML = `
-        <div class="node-info">
-            <h4>${node.label}</h4>
-            <div class="info-grid">
-                <div class="info-item">
-                    <label>类型</label>
-                    <span>${node.type || '未知'}</span>
-                </div>
-                <div class="info-item">
-                    <label>ID</label>
-                    <span>${node.id}</span>
-                </div>
-                <div class="info-item full-width">
-                    <label>完整名称</label>
-                    <span>${node.originalData?.name || node.label}</span>
-                </div>
-            </div>
-        </div>
-        <div class="connected-info">
-            <h5>关联关系</h5>
-            <div class="relations-list">
-                ${getNodeRelations(node.id)}
-            </div>
-        </div>
-    `;
+    // 从图数据库获取最新属性
+    fetch(`/api/entity_config/node/${node.id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const properties = data.node.properties || {};
+                const propsCount = Object.keys(properties).length;
 
-    panel.style.display = 'block';
-}
+                // 构建标签页结构
+                let propsHtml = '';
+                if (propsCount === 0) {
+                    propsHtml = '<div class="no-properties">暂无属性</div>';
+                } else {
+                    const tabs = Object.keys(properties);
+                    propsHtml = `
+                        <div class="property-tabs">
+                            <div class="tab-nav">
+                                ${tabs.map((key, idx) => `
+                                    <button class="tab-nav-btn ${idx === 0 ? 'active' : ''}"
+                                            data-tab="prop-${idx}">
+                                        ${key.substring(0, 10)}${key.length > 10 ? '...' : ''}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div class="tab-content-wrapper">
+                                ${tabs.map((key, idx) => `
+                                    <div class="tab-pane ${idx === 0 ? 'active' : ''}" id="prop-${idx}">
+                                        <div class="property-item">
+                                            <span class="property-key">${key}:</span>
+                                            <span class="property-value" title="${properties[key]}">${properties[key]}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
 
-function getNodeRelations(nodeId) {
-    const connectedEdges = allEdges.filter(edge =>
-        edge.from === nodeId || edge.to === nodeId
-    );
+                content.innerHTML = `
+                    <div class="node-info">
+                        <h4>${node.label}</h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>类型</label>
+                                <span>${node.type || '未知'}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>ID</label>
+                                <span>${node.id}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="properties-section">
+                        <h5>属性列表 (${propsCount})</h5>
+                        ${propsHtml}
+                    </div>
+                `;
 
-    if (connectedEdges.length === 0) {
-        return '<div class="no-relations">暂无关联关系</div>';
-    }
+                bindPropertyTabs();
 
-    let html = '';
-    connectedEdges.forEach(edge => {
-        const isOutgoing = edge.from === nodeId;
-        const targetNodeId = isOutgoing ? edge.to : edge.from;
-        const targetNode = allNodes.find(n => n.id === targetNodeId);
-        const direction = isOutgoing ? '→' : '←';
-
-        if (targetNode) {
-            html += `
-                <div class="relation-item">
-                    <span class="relation-direction">${direction}</span>
-                    <span class="relation-type">${edge.type}</span>
-                    <span class="relation-target">${targetNode.label}</span>
-                </div>
-            `;
-        }
-    });
-
-    return html;
+                // 设置面板样式 - 缩小版
+                panel.style.display = 'block';
+                panel.style.position = 'absolute';
+                panel.style.top = '20px';
+                panel.style.right = '20px';
+                panel.style.width = '320px';  // 缩小到320px
+                panel.style.maxHeight = '70vh'; // 缩小到70vh
+                panel.style.zIndex = '10';
+                panel.style.background = 'rgba(255, 255, 255, 0.95)';
+                panel.style.backdropFilter = 'blur(15px)';
+                panel.style.border = '1px solid rgba(0, 0, 0, 0.1)';
+                panel.style.borderRadius = '12px';
+                panel.style.padding = '20px';
+                panel.style.overflow = 'hidden';
+                panel.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+                panel.style.fontSize = '13px'; // 缩小字体
+            }
+        });
 }
 
 function showEdgeDetails(edge) {
+    const panel = document.getElementById('nodeDetailsPanel');
+    const content = document.getElementById('nodeDetailsContent');
     const sourceNode = allNodes.find(n => n.id === edge.from);
     const targetNode = allNodes.find(n => n.id === edge.to);
 
@@ -883,3 +1380,106 @@ function showInfo(message) {
         confirmButtonColor: '#48dbfb'
     });
 }
+
+function executeKGSearch(keyword) {
+    showLoading('正在搜索节点...');
+
+    fetch(`/api/kg_search?q=${encodeURIComponent(keyword)}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.nodes && data.nodes.length > 0) {
+                // 高亮显示搜索结果
+                network.selectNodes(data.nodes.map(n => n.id));
+                network.focus(data.nodes[0].id, { scale: 1.5 });
+                showSuccess(`找到 ${data.nodes.length} 个相关节点`);
+            } else {
+                showInfo('未找到相关节点');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('搜索失败: ' + error.message);
+        });
+}
+
+function executeMultiHopQuery(source, target, hops) {
+    showLoading('正在执行多跳查询...');
+
+    fetch(`/api/kg_path?source=${encodeURIComponent(source)}&target=${encodeURIComponent(target)}&hops=${hops}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.path && data.path.length > 0) {
+                // 高亮路径
+                const nodeIds = data.path.map(p => p.id);
+                network.selectNodes(nodeIds);
+                network.selectEdges(data.edges || []);
+                network.focus(nodeIds[0], { scale: 1.2 });
+                showSuccess(`找到路径，共 ${data.path.length} 个节点`);
+            } else {
+                showInfo('未找到路径');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('查询失败: ' + error.message);
+        });
+}
+
+function executeTripleQuery(query) {
+    showLoading('正在执行三元组查询...');
+
+    const params = new URLSearchParams();
+    if (query.head) params.append('head', query.head);
+    if (query.relation) params.append('relation', query.relation);
+    if (query.tail) params.append('tail', query.tail);
+
+    fetch(`/api/kg_triple?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.nodes && data.nodes.length > 0) {
+                renderGraph(data);
+                showSuccess(`找到 ${data.nodes.length} 个节点和 ${data.links.length} 条关系`);
+            } else {
+                showInfo('未找到匹配的三元组');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showError('查询失败: ' + error.message);
+        });
+}
+
+// 标签页切换事件
+function bindPropertyTabs() {
+    const tabButtons = document.querySelectorAll('.tab-nav-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+
+            // 移除所有active类
+            tabButtons.forEach(b => b.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
+
+            // 激活当前标签
+            btn.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+        });
+    });
+}
+
+// SweetAlert2容器样式修复
+const style = document.createElement('style');
+style.textContent = `
+    .kg-swal-popup {
+        z-index: 10000 !important;
+    }
+    body.kg-fullscreen-active {
+        overflow: hidden !important;
+    }
+`;
+document.head.appendChild(style);

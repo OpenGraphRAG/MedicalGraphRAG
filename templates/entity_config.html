@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/entity_config.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- 侧边导航 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="hospital-logo">
+                <i class="fas fa-book-medical"></i>
+                <h2>健康知识平台</h2>
+            </div>
+        </div>
+
+        <nav class="nav-links">
+            <div class="nav-group">
+                <div class="nav-title">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                    <i class="fas fa-user-injured"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link">
+                    <i class="fas fa-book-medical"></i>
+                    <span>知识库管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>知识图谱管理</span>
+                </a>
+                <a href="{{ url_for('entity_config') }}" class="nav-link active">
+                    <i class="fas fa-edit"></i>
+                    <span>实体关系属性配置</span>
+                </a>
+                <a href="{{ url_for('prompt_templates_management') }}" class="nav-link">
+                    <i class="fas fa-code"></i>
+                    <span>Prompt模板管理</span>
+                </a>
+            </div>
+
+            <div class="nav-group">
+                <div class="nav-title">系统设置</div>
+                <a href="{{ url_for('system_settings') }}" class="nav-link"><i class="fas fa-cog"></i><span>系统设置</span></a>
+                <a href="{{ url_for('logout') }}" class="nav-link"><i class="fas fa-sign-out-alt"></i><span>退出登录</span></a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 顶部导航 -->
+        <header class="top-nav">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchTriples" placeholder="搜索实体、关系...">
+            </div>
+
+            <div class="user-info">
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-avatar">管</div>
+                <div class="user-details">
+                    <div class="user-name">管理员</div>
+                    <div class="user-role">系统管理员</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <section class="content-area">
+            <div class="content-header">
+                <h1>实体关系属性配置</h1>
+                <p>对知识图谱中的实体和关系属性进行自定义配置</p>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-cubes"></i></div>
+                    <div class="stat-info">
+                        <h3 id="totalEntities">0</h3>
+                        <p>实体总数</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-link"></i></div>
+                    <div class="stat-info">
+                        <h3 id="totalRelations">0</h3>
+                        <p>关系总数</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-edit"></i></div>
+                    <div class="stat-info">
+                        <h3 id="modifiedCount">0</h3>
+                        <p>已修改</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <div class="control-left">
+                    <button class="btn btn-primary" id="refreshTriples">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <div class="records-count">
+                        当前显示 <strong id="currentCount">0</strong> 条，共 <strong id="totalCount">0</strong> 条
+                    </div>
+                </div>
+                <div class="control-right">
+                    <label class="per-page-selector">
+                        每页显示
+                        <select id="perPageSelect">
+                            <option value="3">3个三元组</option>
+                            <option value="5">5个三元组</option>
+                            <option value="10">10个三元组</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 三元组编辑区域 -->
+            <div class="triples-container" id="triplesContainer">
+                <!-- 动态加载三元组卡片 -->
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination" id="pagination">
+                <!-- 动态生成分页 -->
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- 编辑属性模态框 -->
+<div class="modal" id="editPropertiesModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="editModalTitle">编辑属性</h2>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="propertiesForm">
+                <div id="propertiesContainer">
+                    <!-- 动态生成属性输入框 -->
+                </div>
+                <button type="button" class="btn btn-outline" id="addPropertyBtn">
+                    <i class="fas fa-plus"></i> 添加属性
+                </button>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="cancelEditBtn">取消</button>
+            <button class="btn btn-primary" id="savePropertiesBtn">保存修改</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ url_for('static', filename='js/entity_config.js') }}"></script>
+{% endblock %}

@@ -2,462 +2,470 @@
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 <style>
-/* Prompt模板管理专用样式 */
-.prompt-templates-container {
-    padding: 20px;
-}
-
-.templates-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.header-actions {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-
-.active-template-badge {
-    background: linear-gradient(135deg, var(--accent-4), var(--primary));
-    color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.templates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.template-card {
-    background: rgba(26, 26, 46, 0.6);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.template-card.active {
-    border-color: var(--accent-4);
-    box-shadow: 0 0 20px rgba(72, 219, 251, 0.3);
-}
-
-.template-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.template-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-}
-
-.template-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--accent-4);
-    margin-bottom: 5px;
-}
-
-.template-category {
-    display: inline-block;
-    padding: 4px 12px;
-    background: rgba(72, 219, 251, 0.1);
-    color: var(--accent-4);
-    border-radius: 15px;
-    font-size: 12px;
-    border: 1px solid rgba(72, 219, 251, 0.3);
-}
-
-.template-description {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    margin-bottom: 15px;
-    line-height: 1.5;
-}
-
-.template-content-preview {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    max-height: 120px;
-    overflow: hidden;
-    position: relative;
-}
-
-.template-content-preview:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 40px;
-    background: linear-gradient(transparent, rgba(26, 26, 46, 0.8));
-}
-
-.template-content {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 13px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
-.template-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.template-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.template-meta {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.status-badge {
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 500;
-}
-
-.status-active {
-    background: rgba(46, 204, 113, 0.2);
-    color: #2ecc71;
-    border: 1px solid rgba(46, 204, 113, 0.3);
-}
-
-.status-inactive {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-}
-
-/* 空状态样式 */
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.empty-state i {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    opacity: 0.5;
-}
-
-.empty-state h3 {
-    color: var(--accent-4);
-    margin-bottom: 10px;
-}
-
-/* 模态框样式优化 */
-.prompt-modal .modal-content {
-    max-width: 800px;
-}
-
-.prompt-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-.form-label {
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.form-input, .form-select, .form-textarea {
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text);
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.form-input:focus, .form-select:focus, .form-textarea:focus {
-    outline: none;
-    border-color: var(--accent-4);
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.2);
-}
-
-.form-textarea {
-    min-height: 200px;
-    resize: vertical;
-    font-family: 'Courier New', monospace;
-    line-height: 1.4;
-}
-
-.form-help {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 5px;
-}
-
-.variable-list {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    padding: 15px;
-    margin-top: 10px;
-}
-
-.variable-item {
-    display: inline-block;
-    background: rgba(72, 219, 251, 0.1);
-    color: var(--accent-4);
-    padding: 4px 8px;
-    margin: 4px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: 'Courier New', monospace;
-    border: 1px solid rgba(72, 219, 251, 0.3);
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .templates-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
+    /* Prompt模板管理专用样式 */
+    .prompt-templates-container {
+        padding: 20px;
     }
 
     .templates-header {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .header-actions {
-        width: 100%;
-        justify-content: space-between;
+        display: flex;
+        gap: 15px;
+        align-items: center;
     }
-}
+
+    .active-template-badge {
+        background: linear-gradient(135deg, var(--accent-4), var(--primary));
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .template-card {
+        background: rgba(26, 26, 46, 0.6);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .template-card.active {
+        border-color: var(--accent-4);
+        box-shadow: 0 0 20px rgba(72, 219, 251, 0.3);
+    }
+
+    .template-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .template-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .template-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--accent-4);
+        margin-bottom: 5px;
+    }
+
+    .template-category {
+        display: inline-block;
+        padding: 4px 12px;
+        background: rgba(72, 219, 251, 0.1);
+        color: var(--accent-4);
+        border-radius: 15px;
+        font-size: 12px;
+        border: 1px solid rgba(72, 219, 251, 0.3);
+    }
+
+    .template-description {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+
+    .template-content-preview {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        max-height: 120px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .template-content-preview:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(transparent, rgba(26, 26, 46, 0.8));
+    }
+
+    .template-content {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 13px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .template-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .template-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .template-meta {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+        border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .status-inactive {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* 空状态样式 */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        color: var(--accent-4);
+        margin-bottom: 10px;
+    }
+
+    /* 模态框样式优化 */
+    .prompt-modal .modal-content {
+        max-width: 800px;
+    }
+
+    .prompt-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .form-input, .form-select, .form-textarea {
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        outline: none;
+        border-color: var(--accent-4);
+        background: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 0 0 2px rgba(72, 219, 251, 0.2);
+    }
+
+    .form-textarea {
+        min-height: 200px;
+        resize: vertical;
+        font-family: 'Courier New', monospace;
+        line-height: 1.4;
+    }
+
+    .form-help {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 5px;
+    }
+
+    .variable-list {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+
+    .variable-item {
+        display: inline-block;
+        background: rgba(72, 219, 251, 0.1);
+        color: var(--accent-4);
+        padding: 4px 8px;
+        margin: 4px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+        border: 1px solid rgba(72, 219, 251, 0.3);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .templates-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .templates-header {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="admin-container">
-  <!-- 侧边导航 -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="hospital-logo">
-        <i class="fas fa-book-medical"></i>
-        <h2>健康知识平台</h2>
-      </div>
-    </div>
-
-    <nav class="nav-links">
-      <div class="nav-group">
-        <div class="nav-title">核心功能</div>
-        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
-          <i class="fas fa-user-injured"></i>
-          <span>用户健康档案管理</span>
-        </a>
-        <a href="{{ url_for('knowledge_management') }}" class="nav-link">
-          <i class="fas fa-book-medical"></i>
-          <span>知识库管理</span>
-        </a>
-        <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
-          <i class="fas fa-project-diagram"></i>
-          <span>知识图谱管理</span>
-        </a>
-        <a href="{{ url_for('prompt_templates_management') }}" class="nav-link active">
-          <i class="fas fa-code"></i>
-          <span>Prompt模板管理</span>
-        </a>
-      </div>
-
-      <div class="nav-group">
-        <div class="nav-title">系统设置</div>
-        <a href="{{ url_for('system_settings') }}" class="nav-link"><i class="fas fa-cog"></i><span>系统设置</span></a>
-        <a href="{{ url_for('logout') }}" class="nav-link"><i class="fas fa-sign-out-alt"></i><span>退出登录</span></a>
-      </div>
-    </nav>
-
-  </aside>
-
-  <!-- 主内容区 -->
-  <main class="main-content">
-    <!-- 顶部导航 -->
-    <header class="top-nav">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchTemplates" placeholder="搜索模板名称、描述或内容...">
-      </div>
-
-      <div class="user-info">
-        <div class="notification">
-          <i class="fas fa-bell"></i>
-          <span class="badge">3</span>
-        </div>
-        <div class="user-avatar">管</div>
-        <div class="user-details">
-          <div class="user-name">管理员</div>
-          <div class="user-role">系统管理员</div>
-        </div>
-      </div>
-    </header>
-
-    <!-- 内容区域 -->
-    <section class="content-area">
-      <div class="prompt-templates-container">
-        <div class="templates-header">
-          <div class="header-info">
-            <h1>Prompt模板管理</h1>
-            <p>管理和配置大模型使用的Prompt模板</p>
-          </div>
-          <div class="header-actions">
-            <div class="active-template-badge" id="activeTemplateBadge">
-              <i class="fas fa-spinner fa-spin"></i> 加载中...
+    <!-- 侧边导航 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="hospital-logo">
+                <i class="fas fa-book-medical"></i>
+                <h2>健康知识平台</h2>
             </div>
-            <button class="btn btn-primary" id="createTemplateBtn">
-              <i class="fas fa-plus"></i> 新建模板
-            </button>
-          </div>
         </div>
 
-        <div class="dashboard-actions">
-          <div class="action-left">
-            <button class="btn btn-outline" id="refreshTemplates">
-              <i class="fas fa-sync-alt"></i> 刷新
-            </button>
-            <div class="records-count">
-              共 <strong id="templatesCount">0</strong> 个模板
+        <nav class="nav-links">
+            <div class="nav-group">
+                <div class="nav-title">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                    <i class="fas fa-user-injured"></i>
+                    <span>用户健康档案管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link">
+                    <i class="fas fa-book-medical"></i>
+                    <span>知识库管理</span>
+                </a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>知识图谱管理</span>
+                </a>
+                <a href="{{ url_for('entity_config') }}" class="nav-link active">
+                    <i class="fas fa-edit"></i>
+                    <span>实体关系属性配置</span>
+                </a>
+                <a href="{{ url_for('prompt_templates_management') }}" class="nav-link active">
+                    <i class="fas fa-code"></i>
+                    <span>Prompt模板管理</span>
+                </a>
             </div>
-          </div>
-        </div>
 
-        <!-- 模板列表 -->
-        <div class="templates-grid" id="templatesGrid">
-          <!-- 模板卡片将通过JavaScript动态生成 -->
-        </div>
+            <div class="nav-group">
+                <div class="nav-title">系统设置</div>
+                <a href="{{ url_for('system_settings') }}" class="nav-link"><i
+                        class="fas fa-cog"></i><span>系统设置</span></a>
+                <a href="{{ url_for('logout') }}" class="nav-link"><i
+                        class="fas fa-sign-out-alt"></i><span>退出登录</span></a>
+            </div>
+        </nav>
 
-        <!-- 空状态 -->
-        <div class="empty-state" id="emptyState" style="display: none;">
-          <i class="fas fa-code"></i>
-          <h3>暂无Prompt模板</h3>
-          <p>还没有创建任何Prompt模板，点击"新建模板"开始创建</p>
-          <button class="btn btn-primary" id="createFirstTemplateBtn">
-            <i class="fas fa-plus"></i> 创建第一个模板
-          </button>
-        </div>
-      </div>
-    </section>
-  </main>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 顶部导航 -->
+        <header class="top-nav">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchTemplates" placeholder="搜索模板名称、描述或内容...">
+            </div>
+
+            <div class="user-info">
+                <div class="notification">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-avatar">管</div>
+                <div class="user-details">
+                    <div class="user-name">管理员</div>
+                    <div class="user-role">系统管理员</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 内容区域 -->
+        <section class="content-area">
+            <div class="prompt-templates-container">
+                <div class="templates-header">
+                    <div class="header-info">
+                        <h1>Prompt模板管理</h1>
+                        <p>管理和配置大模型使用的Prompt模板</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="active-template-badge" id="activeTemplateBadge">
+                            <i class="fas fa-spinner fa-spin"></i> 加载中...
+                        </div>
+                        <button class="btn btn-primary" id="createTemplateBtn">
+                            <i class="fas fa-plus"></i> 新建模板
+                        </button>
+                    </div>
+                </div>
+
+                <div class="dashboard-actions">
+                    <div class="action-left">
+                        <button class="btn btn-outline" id="refreshTemplates">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                        <div class="records-count">
+                            共 <strong id="templatesCount">0</strong> 个模板
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模板列表 -->
+                <div class="templates-grid" id="templatesGrid">
+                    <!-- 模板卡片将通过JavaScript动态生成 -->
+                </div>
+
+                <!-- 空状态 -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <i class="fas fa-code"></i>
+                    <h3>暂无Prompt模板</h3>
+                    <p>还没有创建任何Prompt模板，点击"新建模板"开始创建</p>
+                    <button class="btn btn-primary" id="createFirstTemplateBtn">
+                        <i class="fas fa-plus"></i> 创建第一个模板
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
 </div>
 
 <!-- 创建/编辑模板模态框 -->
 <div class="modal prompt-modal" id="templateModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 id="templateModalTitle">新建Prompt模板</h2>
-      <span class="close">&times;</span>
-    </div>
-    <div class="modal-body">
-      <form id="templateForm" class="prompt-form">
-        <input type="hidden" id="templateId">
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="templateName" class="form-label">模板名称</label>
-            <input type="text" id="templateName" class="form-input" required>
-          </div>
-
-          <div class="form-group">
-            <label for="templateCategory" class="form-label">分类</label>
-            <select id="templateCategory" class="form-select">
-              <option value="health_knowledge">健康知识</option>
-              <option value="medical">医学诊断</option>
-              <option value="general">通用问答</option>
-              <option value="other">其他</option>
-            </select>
-          </div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="templateModalTitle">新建Prompt模板</h2>
+            <span class="close">&times;</span>
         </div>
+        <div class="modal-body">
+            <form id="templateForm" class="prompt-form">
+                <input type="hidden" id="templateId">
 
-        <div class="form-group">
-          <label for="templateDescription" class="form-label">描述</label>
-          <textarea id="templateDescription" class="form-input" rows="3" placeholder="简要描述这个模板的用途..."></textarea>
-        </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="templateName" class="form-label">模板名称</label>
+                        <input type="text" id="templateName" class="form-input" required>
+                    </div>
 
-        <div class="form-group full-width">
-          <label for="templateContent" class="form-label">模板内容</label>
-          <textarea id="templateContent" class="form-textarea" rows="12" required placeholder="请输入Prompt模板内容..."></textarea>
-          <div class="form-help">
-            可用变量:
-            <div class="variable-list">
-              <span class="variable-item">{user_input}</span>
-              <span class="variable-item">{kg_results}</span>
-              <span class="variable-item">{vdb_results}</span>
-              <span class="variable-item">{current_date}</span>
-              <span class="variable-item">{user_name}</span>
-            </div>
-          </div>
+                    <div class="form-group">
+                        <label for="templateCategory" class="form-label">分类</label>
+                        <select id="templateCategory" class="form-select">
+                            <option value="health_knowledge">健康知识</option>
+                            <option value="medical">医学诊断</option>
+                            <option value="general">通用问答</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="templateDescription" class="form-label">描述</label>
+                    <textarea id="templateDescription" class="form-input" rows="3"
+                              placeholder="简要描述这个模板的用途..."></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="templateContent" class="form-label">模板内容</label>
+                    <textarea id="templateContent" class="form-textarea" rows="12" required
+                              placeholder="请输入Prompt模板内容..."></textarea>
+                    <div class="form-help">
+                        可用变量:
+                        <div class="variable-list">
+                            <span class="variable-item">{user_input}</span>
+                            <span class="variable-item">{kg_results}</span>
+                            <span class="variable-item">{vdb_results}</span>
+                            <span class="variable-item">{current_date}</span>
+                            <span class="variable-item">{user_name}</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
         </div>
-      </form>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="cancelTemplateBtn">取消</button>
+            <button class="btn btn-primary" id="saveTemplateBtn">保存模板</button>
+        </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" id="cancelTemplateBtn">取消</button>
-      <button class="btn btn-primary" id="saveTemplateBtn">保存模板</button>
-    </div>
-  </div>
 </div>
 
 <!-- 确认删除模态框 -->
 <div class="modal" id="confirmDeleteModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>确认删除</h2>
-      <span class="close">&times;</span>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>确认删除</h2>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>确定要删除模板 "<strong id="deleteTemplateName"></strong>" 吗？此操作不可撤销。</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="cancelDeleteBtn">取消</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
+        </div>
     </div>
-    <div class="modal-body">
-      <p>确定要删除模板 "<strong id="deleteTemplateName"></strong>" 吗？此操作不可撤销。</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" id="cancelDeleteBtn">取消</button>
-      <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
-    </div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
