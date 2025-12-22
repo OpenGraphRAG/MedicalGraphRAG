@@ -466,7 +466,7 @@ class KnowledgeGraphManager:
                     if embedding:
                         # 检查是否已存在
                         if entity["id"] not in self.vector_index["entities"]["ids"]:
-                            self.vector_index["entities"]["ids"].append(entity["id"])
+                            self.vector_index["entities"]["ids"].append(str(entity["id"]))
                             self.vector_index["entities"]["names"].append(entity["name"])
                             self.vector_index["entities"]["types"].append(
                                 entity["labels"][0] if entity["labels"] else "Entity")
@@ -585,7 +585,6 @@ class KnowledgeGraphManager:
                         node_set.add(id_)
                 links.append({"source": rec["source_id"], "target": rec["target_id"], "type": rec["relationship"]})
             return {"nodes": nodes, "links": links}
-
 
     def save_to_neo4j(self, entities: List[Dict], relationships: List[Dict]) -> bool:
         """
@@ -1278,33 +1277,28 @@ class KnowledgeGraphManager:
 
         return narrative
 
-    def query_whole_graph(self, limit: int = 100) -> Dict:
+    def query_whole_graph(self, limit: int = 500) -> Dict:
         """
         查询整个知识图谱（限制数量）
-
-        参数:
-            limit: 返回的关系数量限制
-
-        返回:
-            {"nodes": 节点列表, "links": 关系列表}
+        修改 id() 为 elementId()
         """
         if not self.driver:
             return {"nodes": [], "links": []}
 
         try:
             with self.driver.session() as session:
-                # 构建查询语句（查询所有关系，限制数量）
+                # 构建查询语句（查询所有关系，限制数量）- 修改 id() 为 elementId()
                 query = """
-                MATCH (start)-[r]->(end)
-                RETURN start.name AS source, 
-                       labels(start)[0] AS source_type,
-                       type(r) AS relationship, 
-                       end.name AS target,
-                       labels(end)[0] AS target_type,
-                       id(start) as source_id,
-                       id(end) as target_id
-                LIMIT $limit
-                """
+                        MATCH (start)-[r]->(end)
+                        RETURN start.name AS source, 
+                               labels(start)[0] AS source_type,
+                               type(r) AS relationship, 
+                               end.name AS target,
+                               labels(end)[0] AS target_type,
+                               elementId(start) AS source_id,
+                               elementId(end) AS target_id
+                        LIMIT $limit
+                        """
 
                 # 执行查询
                 result = session.run(query, limit=limit)
@@ -1316,7 +1310,6 @@ class KnowledgeGraphManager:
                 node_set = set()
 
                 for record in records:
-                    # 确保使用正确的字段名
                     source_id = record["source_id"]
                     source_name = record["source"]
                     source_type = record["source_type"]
@@ -1400,8 +1393,8 @@ class KnowledgeGraphManager:
                                type(r) AS relationship, 
                                end.name AS target,
                                labels(end)[0] AS target_type,
-                               id(start) as source_id,
-                               id(end) as target_id
+                               elementId(start) as source_id,
+                               elementId(end) as target_id
                         LIMIT $limit
                         """
 
@@ -1453,6 +1446,343 @@ class KnowledgeGraphManager:
             print(f"❌ 图数据库查询失败: {e}")
             return {"nodes": [], "links": []}
 
+    # 在knowledge_graph.py的KnowledgeGraphManager类中添加以下方法
+
+    def get_triples_paginated(self, page: int = 1, per_page: int = 3, search: str = '') -> Dict:
+        """分页获取三元组数据（头节点-关系-尾节点）"""
+        if not self.driver:
+            return {'triples': [], 'total_pages': 0, 'total_items': 0}
+
+        try:
+            with self.driver.session() as session:
+                # 计算跳过数量
+                skip = (page - 1) * per_page
+
+                # 构建查询（支持搜索）
+                match_clause = "MATCH (h)-[r]->(t)"
+                where_clause = ""
+                if search:
+                    where_clause = f"WHERE h.name CONTAINS '{search}' OR t.name CONTAINS '{search}' OR type(r) CONTAINS '{search}'"
+
+                # 获取总数量
+                count_query = f"{match_clause} {where_clause} RETURN count(*) as total"
+                total_result = session.run(count_query)
+                total_items = total_result.single()['total']
+                total_pages = (total_items + per_page - 1) // per_page
+
+                # 获取分页数据
+                data_query = f"""
+                {match_clause} {where_clause}
+                RETURN id(h) as head_tid, h.name as head_name, labels(h)[0] as head_type,
+                       id(t) as tail_tid, t.name as tail_name, labels(t)[0] as tail_type,
+                       id(r) as rid, type(r) as relation_type, properties(r) as relation_props,
+                       properties(h) as head_props, properties(t) as tail_props
+                ORDER BY head_name, relation_type, tail_name
+                SKIP {skip} LIMIT {per_page}
+                """
+
+                results = session.run(data_query)
+                triples = []
+
+                for record in results:
+                    triples.append({
+                        'head': {
+                            'tid': record['head_tid'],
+                            'name': record['head_name'],
+                            'type': record['head_type'],
+                            'properties': record['head_props'] or {}
+                        },
+                        'tail': {
+                            'tid': record['tail_tid'],
+                            'name': record['tail_name'],
+                            'type': record['tail_type'],
+                            'properties': record['tail_props'] or {}
+                        },
+                        'relation': {
+                            'rid': record['rid'],
+                            'type': record['relation_type'],
+                            'properties': record['relation_props'] or {}
+                        }
+                    })
+
+                return {
+                    'triples': triples,
+                    'total_pages': total_pages,
+                    'total_items': total_items
+                }
+        except Exception as e:
+            print(f"分页获取三元组失败: {e}")
+            return {'triples': [], 'total_pages': 0, 'total_items': 0}
+
+    def get_triple_details(self, head_tid: int, tail_tid: int, rid: int) -> Dict:
+        """获取单个三元组的详细信息"""
+        if not self.driver:
+            return {}
+
+        try:
+            with self.driver.session() as session:
+                query = """
+                MATCH (h)-[r]->(t)
+                WHERE id(h) = $head_tid AND id(t) = $tail_tid AND id(r) = $rid
+                RETURN id(h) as head_tid, h.name as head_name, labels(h)[0] as head_type, properties(h) as head_props,
+                       id(t) as tail_tid, t.name as tail_name, labels(t)[0] as tail_type, properties(t) as tail_props,
+                       id(r) as rid, type(r) as relation_type, properties(r) as relation_props
+                """
+
+                result = session.run(query, head_tid=head_tid, tail_tid=tail_tid, rid=rid)
+                record = result.single()
+
+                if record:
+                    return {
+                        'head': {
+                            'tid': record['head_tid'],
+                            'name': record['head_name'],
+                            'type': record['head_type'],
+                            'properties': record['head_props'] or {}
+                        },
+                        'tail': {
+                            'tid': record['tail_tid'],
+                            'name': record['tail_name'],
+                            'type': record['tail_type'],
+                            'properties': record['tail_props'] or {}
+                        },
+                        'relation': {
+                            'rid': record['rid'],
+                            'type': record['relation_type'],
+                            'properties': record['relation_props'] or {}
+                        }
+                    }
+                return {}
+        except Exception as e:
+            print(f"获取三元组详情失败: {e}")
+            return {}
+
+    def update_triple_properties(self, head_tid: int, tail_tid: int, rid: int, data: Dict) -> bool:
+        """更新三元组的属性（包括节点和关系的属性）"""
+        if not self.driver:
+            return False
+
+        try:
+            with self.driver.session() as session:
+                # 更新头节点属性
+                if 'head_properties' in data:
+                    session.run("""
+                    MATCH (n) WHERE id(n) = $tid
+                    SET n += $props
+                    """, tid=head_tid, props=data['head_properties'])
+
+                # 更新尾节点属性
+                if 'tail_properties' in data:
+                    session.run("""
+                    MATCH (n) WHERE id(n) = $tid
+                    SET n += $props
+                    """, tid=tail_tid, props=data['tail_properties'])
+
+                # 更新关系属性
+                if 'relation_properties' in data:
+                    session.run("""
+                    MATCH ()-[r]->() WHERE id(r) = $rid
+                    SET r += $props
+                    """, rid=rid, props=data['relation_properties'])
+
+                return True
+        except Exception as e:
+            print(f"更新三元组属性失败: {e}")
+            return False
+
+    def update_node_properties(self, node_id: int, data: Dict) -> bool:
+        """单独更新节点属性"""
+        if not self.driver:
+            return False
+
+        try:
+            with self.driver.session() as session:
+                session.run("""
+                MATCH (n) WHERE id(n) = $nid
+                SET n += $props
+                """, nid=node_id, props=data.get('properties', {}))
+                return True
+        except Exception as e:
+            print(f"更新节点属性失败: {e}")
+            return False
+
+    def update_relation_properties(self, rid: int, data: Dict) -> bool:
+        """单独更新关系属性"""
+        if not self.driver:
+            return False
+
+        try:
+            with self.driver.session() as session:
+                session.run("""
+                MATCH ()-[r]->() WHERE id(r) = $rid
+                SET r += $props
+                """, rid=rid, props=data.get('properties', {}))
+                return True
+        except Exception as e:
+            print(f"更新关系属性失败: {e}")
+            return False
+
+    def get_relation_details(self, rid: int) -> dict:
+        """
+        获取单个关系的详细信息 - 修复版
+        修复：添加rid字段，统一返回格式
+        """
+        if not self.driver:
+            return {'success': False, 'error': '数据库未连接'}
+
+        try:
+            with self.driver.session() as session:
+                # ✅ 同时返回elementId()和内部ID
+                query = """
+                MATCH ()-[r]->()
+                WHERE elementId(r) = $rid
+                RETURN elementId(r) as element_id, id(r) as internal_id,
+                       type(r) as relation_type, properties(r) as relation_props
+                """
+
+                result = session.run(query, rid=str(rid))
+                record = result.single()
+
+                if record:
+                    return {
+                        'success': True,
+                        'relation': {
+                            'rid': str(record['element_id']),  # ✅ 统一为rid
+                            'internal_id': record['internal_id'],
+                            'type': record['relation_type'],
+                            'properties': record['relation_props'] or {}
+                        }
+                    }
+                return {'success': False, 'error': '关系不存在'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+
+    def check_connection(self) -> bool:
+        """
+        检查Neo4j连接是否健康
+        :return: 连接状态
+        """
+        if not self.driver:
+            return False
+        try:
+            with self.driver.session() as session:
+                session.run("RETURN 1 as ping").single()
+            return True
+        except:
+            return False
+
+    def search_triple(self, head: str = None, relation: str = None, tail: str = None, limit: int = 50) -> Dict:
+        """根据头节点、关系、尾节点组合查询三元组"""
+        if not self.driver:
+            return {"nodes": [], "links": []}
+
+        try:
+            with self.driver.session() as session:
+                # 构建动态查询
+                conditions = []
+                params = {}
+
+                if head:
+                    conditions.append("h.name CONTAINS $head")
+                    params["head"] = head
+                if relation:
+                    conditions.append("type(r) CONTAINS $relation")
+                    params["relation"] = relation
+                if tail:
+                    conditions.append("t.name CONTAINS $tail")
+                    params["tail"] = tail
+
+                where_clause = ""
+                if conditions:
+                    where_clause = "WHERE " + " AND ".join(conditions)
+
+                # 关键修改：id() 改为 elementId()
+                query = f"""
+                        MATCH (h)-[r]->(t)
+                        {where_clause}
+                        RETURN h.name AS source, labels(h)[0] AS source_type,
+                               type(r) AS relationship,
+                               t.name AS target, labels(t)[0] AS target_type,
+                               elementId(h) AS source_id, elementId(t) AS target_id
+                        LIMIT $limit
+                        """
+
+                params["limit"] = limit
+
+                result = session.run(query, params)
+                records = [dict(record) for record in result]
+
+                # 转换为前端格式
+                nodes = []
+                links = []
+                node_set = set()
+
+                for record in records:
+                    # 添加头节点
+                    if record["source_id"] not in node_set:
+                        nodes.append({
+                            "id": record["source_id"],
+                            "name": record["source"],
+                            "type": record["source_type"]
+                        })
+                        node_set.add(record["source_id"])
+
+                    # 添加尾节点
+                    if record["target_id"] not in node_set:
+                        nodes.append({
+                            "id": record["target_id"],
+                            "name": record["target"],
+                            "type": record["target_type"]
+                        })
+                        node_set.add(record["target_id"])
+
+                    # 添加关系
+                    links.append({
+                        "source": record["source_id"],
+                        "target": record["target_id"],
+                        "type": record["relationship"]
+                    })
+
+                return {"nodes": nodes, "links": links}
+        except Exception as e:
+            print(f"三元组查询失败: {e}")
+            return {"nodes": [], "links": []}
+
+    def get_node_details(self, node_id: int) -> dict:
+        """
+        获取单个节点的详细信息 - 修复版
+        修复：添加tid字段，兼容不同格式
+        """
+        if not self.driver:
+            return {'success': False, 'error': '数据库未连接'}
+
+        try:
+            with self.driver.session() as session:
+                # ✅ 同时返回elementId()和内部ID
+                query = """
+                MATCH (n)
+                WHERE elementId(n) = $node_id
+                RETURN elementId(n) as element_id, id(n) as internal_id, 
+                       n.name as name, labels(n)[0] as type, properties(n) as properties
+                """
+
+                result = session.run(query, node_id=str(node_id))
+                record = result.single()
+
+                if record:
+                    return {
+                        'success': True,
+                        'node': {
+                            'tid': str(record['element_id']),  # ✅ 统一为tid
+                            'internal_id': record['internal_id'],  # 保留内部ID备用
+                            'name': record['name'] or '未命名',
+                            'type': record['type'] or '实体',
+                            'properties': record['properties'] or {}
+                        }
+                    }
+                return {'success': False, 'error': '节点不存在'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 
 # 使用示例
 if __name__ == "__main__":

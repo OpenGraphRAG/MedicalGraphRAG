@@ -13,21 +13,30 @@ from vector_db import VectorDBManager
 from knowledge_graph import KnowledgeGraphManager
 from flask import jsonify
 
-nltk.data.path.append(os.path.join(os.path.dirname(__file__), 'nltk_data'))
 app = Flask(__name__)
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'doc', 'docx', 'md'}
 app.secret_key = 'hospital_secret_key_123'
-app.config['DATABASE'] = 'data/hospital.db'
-app.config['KNOWLEDGE_BASE'] = config.EXTERNAL_FILE
 app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'docx', 'md'}
-app.config['VECTOR_DB_PATH'] = config.VECTOR_DB_PATH
-app.config['DOCUMENTS_DIR'] = config.DOCUMENTS_DIR
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-# 确保知识库目录存在
+# 在文件开头添加
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app.config['DATABASE'] = os.path.join(BASE_DIR, 'data/hospital.db')
+app.config['KNOWLEDGE_BASE'] = config.EXTERNAL_FILE
+app.config['VECTOR_DB_PATH'] = os.path.join(BASE_DIR, config.VECTOR_DB_PATH)
+app.config['DOCUMENTS_DIR'] = os.path.join(BASE_DIR, config.DOCUMENTS_DIR)
+
+# 确保目录存在
+os.makedirs(os.path.dirname(app.config['DATABASE']), exist_ok=True)
 os.makedirs(app.config['KNOWLEDGE_BASE'], exist_ok=True)
 os.makedirs(app.config['VECTOR_DB_PATH'], exist_ok=True)
-os.makedirs(app.config['DOCUMENTS_DIR'], exist_ok=True)  # 确保文档目录存在
+os.makedirs(app.config['DOCUMENTS_DIR'], exist_ok=True)
+
+# 修改nltk路径
+nltk_data_path = os.path.join(BASE_DIR, 'nltk_data')
+nltk.data.path.append(nltk_data_path)
+
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 初始化GraphRAG系统
 kg_manager = KnowledgeGraphManager()
@@ -351,6 +360,7 @@ def check_and_fix_database_tables():
     finally:
         conn.close()
 
+
 # 添加测试患者数据
 def add_test_patients():
     conn = sqlite3.connect(app.config['DATABASE'])
@@ -489,7 +499,7 @@ def register():
             ''', (
                 name, phone, hashed_password, age, gender, blood_type,
                 height, weight, conditions, allergies,
-                occupation, ethnicity,  education,  marital_status,
+                occupation, ethnicity, education, marital_status,
                 is_smoker, is_drinker, surgery_history, medications, disease_history,
                 systolic_bp, diastolic_bp, bp_measure_time, family_history, regular_exercise
             ))
@@ -1770,17 +1780,16 @@ def knowledge_graph():
                            neo4j_user=config.NEO4J_USER,
                            neo4j_password=config.NEO4J_PASSWORD)
 
-# 获取图谱数据API
 @app.route('/api/kg_data')
 def get_kg_data():
-    """获取图谱数据API"""
+    """获取图谱数据API，支持动态限制数量"""
     try:
+        limit = request.args.get('limit', 100, type=int)
         kg = KnowledgeGraphManager()
-        return jsonify(kg.query_whole_graph(limit=100))
+        return jsonify(kg.query_whole_graph(limit=limit))
     except Exception as e:
         print(f"获取图谱数据API错误: {str(e)}")
         return jsonify({"nodes": [], "links": []})
-
 
 # 处理文本API
 @app.route('/api/process_kg_text', methods=['POST'])
@@ -1946,6 +1955,7 @@ def init_all_db_and_patients():
     else:
         print("数据库已存在，跳过添加测试数据")
 
+
 # 手动修复数据库表
 @app.route('/admin/fix_database', methods=['POST'])
 def fix_database_tables():
@@ -1957,6 +1967,7 @@ def fix_database_tables():
         return jsonify({'success': True, 'message': '数据库表检查修复完成'})
     except Exception as e:
         return jsonify({'error': f'修复数据库表失败: {str(e)}'}), 500
+
 
 # 系统设置页面
 @app.route('/admin/system_settings')
@@ -2200,6 +2211,7 @@ def fix_document_paths():
     except Exception as e:
         return jsonify({'error': f'修复路径失败: {str(e)}'}), 500
 
+
 # ========== 个人中心 ==========
 @app.route('/profile/settings')
 def profile_settings():
@@ -2260,6 +2272,7 @@ def update_profile_basic():
     conn.close()
     return jsonify({'success': True})
 
+
 # =========== 健康指标 CRUD ===========
 # 1) 查询某患者全部指标
 @app.route('/admin/patient/<int:patient_id>/metrics', methods=['GET'])
@@ -2274,6 +2287,7 @@ def admin_list_metrics(patient_id):
     conn.close()
     return jsonify([dict(r) for r in rows])
 
+
 # 2) 新增指标
 @app.route('/admin/patient/<int:patient_id>/metrics', methods=['POST'])
 def admin_add_metric(patient_id):
@@ -2282,12 +2296,14 @@ def admin_add_metric(patient_id):
     data = request.get_json()
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
-    c.execute('INSERT INTO check_metrics(patient_id,item,result,reference_range,unit,date,status) VALUES (?,?,?,?,?,?,?)',
-              (patient_id, data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status']))
+    c.execute(
+        'INSERT INTO check_metrics(patient_id,item,result,reference_range,unit,date,status) VALUES (?,?,?,?,?,?,?)',
+        (patient_id, data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status']))
     conn.commit()
     new_id = c.lastrowid
     conn.close()
     return jsonify({'success': True, 'id': new_id})
+
 
 # 3) 修改指标
 @app.route('/admin/metrics/<int:metric_id>', methods=['PUT'])
@@ -2298,10 +2314,12 @@ def admin_update_metric(metric_id):
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
     c.execute('UPDATE check_metrics SET item=?,result=?,reference_range=?,unit=?,date=?,status=? WHERE id=?',
-              (data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status'], metric_id))
+              (data['item'], data['result'], data['reference_range'], data['unit'], data['date'], data['status'],
+               metric_id))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
+
 
 # 4) 删除指标
 @app.route('/admin/metrics/<int:metric_id>', methods=['DELETE'])
@@ -2333,11 +2351,11 @@ def admin_update_patient_full(patient_id):
         WHERE id=?
     '''
     params = [data[k] for k in (
-        'name','phone','age','gender','blood_type','height','weight',
-        'conditions','allergies','occupation','ethnicity','education',
-        'marital_status','is_smoker','is_drinker','regular_exercise',
-        'systolic_bp','diastolic_bp','bp_measure_time',
-        'surgery_history','medications','disease_history','family_history'
+        'name', 'phone', 'age', 'gender', 'blood_type', 'height', 'weight',
+        'conditions', 'allergies', 'occupation', 'ethnicity', 'education',
+        'marital_status', 'is_smoker', 'is_drinker', 'regular_exercise',
+        'systolic_bp', 'diastolic_bp', 'bp_measure_time',
+        'surgery_history', 'medications', 'disease_history', 'family_history'
     )] + [patient_id]
     conn = sqlite3.connect(app.config['DATABASE'])
     c = conn.cursor()
@@ -2667,9 +2685,235 @@ def get_active_prompt_template():
 
     return jsonify(template_data)
 
+
+# 在app.py中添加以下路由
+
+# ========== 实体关系属性配置管理 ==========
+@app.route('/admin/entity_config')
+def entity_config():
+    """实体关系属性配置页面"""
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+    return render_template('entity_config.html')
+
+
+@app.route('/api/entity_config/triples')
+def get_triples():
+    """分页获取三元组数据"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 3, type=int)  # 每次只显示3个三元组
+        search = request.args.get('search', '')
+
+        kg = KnowledgeGraphManager()
+        result = kg.get_triples_paginated(page, per_page, search)
+
+        return jsonify({
+            'success': True,
+            'triples': result['triples'],
+            'pagination': {
+                'current_page': page,
+                'total_pages': result['total_pages'],
+                'total_items': result['total_items'],
+                'per_page': per_page
+            }
+        })
+    except Exception as e:
+        print(f"获取三元组失败: {str(e)}")
+        return jsonify({'error': f'获取三元组失败: {str(e)}'}), 500
+
+
+@app.route('/api/entity_config/triple/<int:head_tid>/<int:tail_tid>/<int:rid>', methods=['GET', 'PUT'])
+def manage_triple(head_tid, tail_tid, rid):
+    """获取或更新单个三元组"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    kg = KnowledgeGraphManager()
+
+    if request.method == 'GET':
+        try:
+            triple = kg.get_triple_details(head_tid, tail_tid, rid)
+            return jsonify({'success': True, 'triple': triple})
+        except Exception as e:
+            return jsonify({'error': f'获取三元组详情失败: {str(e)}'}), 500
+
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+            success = kg.update_triple_properties(head_tid, tail_tid, rid, data)
+
+            if success:
+                return jsonify({'success': True, 'message': '属性更新成功'})
+            else:
+                return jsonify({'error': '更新失败'}), 500
+        except Exception as e:
+            print(f"更新三元组失败: {str(e)}")
+            return jsonify({'error': f'更新失败: {str(e)}'}), 500
+
+
+@app.route('/api/entity_config/node/<int:node_id>', methods=['PUT'])
+def update_node(node_id):
+    """更新节点属性"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        kg = KnowledgeGraphManager()
+        success = kg.update_node_properties(node_id, data)
+
+        if success:
+            return jsonify({'success': True, 'message': '节点属性更新成功'})
+        else:
+            return jsonify({'error': '更新失败'}), 500
+    except Exception as e:
+        print(f"更新节点失败: {str(e)}")
+        return jsonify({'error': f'更新失败: {str(e)}'}), 500
+
+
+@app.route('/api/entity_config/relation/<int:rid>', methods=['PUT'])
+def update_relation(rid):
+    """更新关系属性"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        data = request.get_json()
+        kg = KnowledgeGraphManager()
+        success = kg.update_relation_properties(rid, data)
+
+        if success:
+            return jsonify({'success': True, 'message': '关系属性更新成功'})
+        else:
+            return jsonify({'error': '更新失败'}), 500
+    except Exception as e:
+        print(f"更新关系失败: {str(e)}")
+        return jsonify({'error': f'更新失败: {str(e)}'}), 500
+
+@app.route('/api/entity_config/relation/<int:rid>')
+def get_relation_details(rid):
+    """获取关系详情"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    kg = KnowledgeGraphManager()
+    result = kg.get_relation_details(rid)
+    return jsonify(result)
+
+
+@app.route('/api/entity_config/node/<int:node_id>')
+def get_node_details(node_id):
+    """获取节点详情"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    kg = KnowledgeGraphManager()
+    result = kg.get_node_details(node_id)
+    return jsonify(result)
+
+
+# 在app.py中添加统一的响应包装工具函数
+from datetime import datetime
+from flask import jsonify, session, request
+import traceback
+
+
+def api_response(success=True, data=None, error=None, status_code=200):
+    """
+    统一API响应格式包装器
+    :param success: 是否成功
+    :param data: 响应数据
+    :param error: 错误信息
+    :param status_code: HTTP状态码
+    """
+    response = {
+        'success': success,
+        'data': data or {},
+        'error': error,
+        'timestamp': datetime.now().isoformat()
+    }
+    return jsonify(response), status_code
+
+
+# 完整的分页查询接口（替换原有函数）
+@app.route('/api/entity_config/triples', methods=['GET'])
+def get_triples_paginated():
+    """
+    分页获取三元组数据 - 生产级实现
+    功能：查询知识图谱中的实体-关系-实体三元组，支持分页和搜索
+    """
+    # 1. 身份验证
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        # 2. 参数验证与清洗
+        page = max(1, request.args.get('page', 1, type=int))
+        per_page = max(1, min(100, request.args.get('per_page', 3, type=int)))
+        search = request.args.get('search', '').strip()
+
+        # 3. 搜索参数安全转义（防止Cypher注入）
+        search = search.replace("'", "\\'").replace('"', '\\"')
+
+        # 4. 检查数据库连接
+        if not kg_manager.driver:
+            return api_response(success=False, error='图数据库未连接', status_code=503)
+
+        result = kg_manager.get_triples_paginated(page=page, per_page=per_page, search=search)
+
+        # ✅ 关键修复：如果result是字典且包含error，转换为success格式
+        if isinstance(result, dict) and 'error' in result:
+            return api_response(success=False, error=result['error'], status_code=500)
+
+        # ✅ 确保返回格式兼容前端 normalizeTripleData
+        return api_response(success=True, data={
+            'triples': result.get('triples', []),
+            'pagination': result.get('pagination', {
+                'current_page': page,
+                'total_pages': 0,
+                'total_items': 0,
+                'per_page': per_page
+            })
+        })
+
+
+    except Exception as e:
+
+        error_detail = traceback.format_exc()
+
+        print(f"【API错误】获取三元组失败: {str(e)}\n{error_detail}")
+
+        return api_response(success=False, error='服务器内部错误', status_code=500)
+
+@app.route('/api/entity_config/node/<int:node_id>', methods=['GET'])
+def get_node_details_api(node_id):
+    """获取节点详情"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    kg = KnowledgeGraphManager()
+    result = kg.get_node_details(node_id)
+    return jsonify(result)
+
+
+@app.route('/api/entity_config/relation/<int:rid>', methods=['GET'])
+def get_relation_details_api(rid):
+    """获取关系详情"""
+    if 'admin_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    kg = KnowledgeGraphManager()
+    result = kg.get_relation_details(rid)
+    return jsonify(result)
+
+
 # 在应用启动时调用此函数
 check_and_fix_document_paths()
 
 if __name__ == '__main__':
     init_all_db_and_patients()
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    socketio.run(app, debug=False, host='127.0.0.1', port=5001, allow_unsafe_werkzeug=True)
