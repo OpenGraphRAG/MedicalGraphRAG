@@ -14,9 +14,9 @@ class Config:
 
         # 图数据库配置
         "GRAPH_DB_TYPE": "Neo4j",
-        "NEO4J_URI": "bolt://39.97.41.99:7687",
-        "NEO4J_USER": "neo4j",
-        "NEO4J_PASSWORD": "neo4j123",
+        "NEO4J_URI": "",
+        "NEO4J_USER": "",
+        "NEO4J_PASSWORD": "",
 
         # 大模型配置
         "LLM_PROVIDER": "DeepSeek",
