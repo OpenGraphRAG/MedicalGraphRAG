@@ -1,171 +1,329 @@
 {% extends "base.html" %}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/health_profile.css') }}">
+<style>
+.digital-twin-section {
+    background: var(--glass); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 25px; margin-bottom: 30px; backdrop-filter: blur(15px);
+}
+.digital-twin-section h2 { color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; }
+.digital-twin-section h2 i { margin-right: 10px; }
+.twin-container { display: flex; gap: 25px; align-items: stretch; }
+.twin-body-wrap {
+    flex: 0 0 280px; position: relative; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(0,245,255,.06) 0%, transparent 70%);
+    border-radius: 16px; border: 1px solid rgba(0,245,255,.08); padding: 20px 10px; min-height: 520px;
+}
+.twin-body-wrap svg { width: 100%; height: auto; max-height: 480px; filter: drop-shadow(0 0 12px rgba(0,245,255,.15)); }
+.body-part { transition: all .5s ease; cursor: pointer; }
+.body-part:hover { filter: brightness(1.4); }
+.body-part.normal { fill: rgba(0,245,255,.35); stroke: rgba(0,245,255,.5); }
+.body-part.warning { fill: rgba(243,156,18,.45); stroke: rgba(243,156,18,.7); animation: pulseWarn 2s infinite; }
+.body-part.danger { fill: rgba(231,76,60,.5); stroke: rgba(231,76,60,.8); animation: pulseDanger 1.5s infinite; }
+.body-part.info { fill: rgba(72,219,251,.4); stroke: rgba(72,219,251,.6); }
+@keyframes pulseWarn { 0%,100%{opacity:.7} 50%{opacity:1} }
+@keyframes pulseDanger { 0%,100%{opacity:.6} 50%{opacity:1} }
+.organ-label {
+    font-size: 8px; fill: rgba(255,255,255,.7); font-family: 'Noto Sans SC', sans-serif;
+    pointer-events: none;
+}
+.twin-legend { flex: 1; min-width: 0; }
+.legend-title { color: var(--primary); font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.legend-items { display: flex; flex-direction: column; gap: 8px; }
+.legend-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); transition: .3s;
+}
+.legend-item:hover { background: rgba(0,245,255,.05); border-color: rgba(0,245,255,.15); }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.legend-dot.normal { background: #2ecc71; box-shadow: 0 0 6px rgba(46,204,113,.5); }
+.legend-dot.warning { background: #f39c12; box-shadow: 0 0 6px rgba(243,156,18,.5); }
+.legend-dot.danger { background: #e74c3c; box-shadow: 0 0 6px rgba(231,76,60,.5); }
+.legend-dot.info { background: #48dbfb; box-shadow: 0 0 6px rgba(72,219,251,.5); }
+.legend-text { color: var(--text); font-size: 13px; flex: 1; }
+.legend-status { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+.legend-status.normal { background: rgba(46,204,113,.15); color: #2ecc71; }
+.legend-status.warning { background: rgba(243,156,18,.15); color: #f39c12; }
+.legend-status.danger { background: rgba(231,76,60,.15); color: #e74c3c; }
+.legend-status.info { background: rgba(72,219,251,.15); color: #48dbfb; }
+.twin-tip { margin-top: 15px; padding: 12px 14px; background: rgba(0,245,255,.05); border-radius: 10px; border: 1px solid rgba(0,245,255,.1); color: var(--text-dim); font-size: 12px; line-height: 1.6; }
+.health-main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+.health-main-grid .card { margin-bottom: 0; }
+.health-full-width { grid-column: 1 / -1; }
+@media (max-width: 900px) { .health-main-grid { grid-template-columns: 1fr; } .twin-container { flex-direction: column; } .twin-body-wrap { flex: none; width: 100%; min-height: 400px; } }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="health-container">
-    <!-- 导航栏 -->
     <nav class="health-nav">
-        <div class="nav-logo"><i class="fas fa-book-medical"></i> 健康画像</div>
+        <div class="nav-logo"><i class="fas fa-brain"></i> AI 健康助手</div>
         <div class="nav-links">
-            <a href="#" class="active">健康画像</a>
-            <a href="{{ url_for('diagnosis') }}">知识推送</a>
-            <a href="{{ url_for('admin_login') }}">后台管理</a>
+            <a href="{{ url_for('health_profile') }}" class="active"><i class="fas fa-user-circle"></i> 健康画像</a>
+            <a href="{{ url_for('diagnosis') }}"><i class="fas fa-magic"></i> 知识推送</a>
+            <a href="{{ url_for('image_analysis') }}"><i class="fas fa-x-ray"></i> 影像分析</a>
             <a href="{{ url_for('profile_settings') }}"><i class="fas fa-cog"></i> 个人设置</a>
-            <a href="{{ url_for('logout') }}">退出登录</a>
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> 退出</a>
         </div>
     </nav>
 
-    <!-- 欢迎横幅 -->
     <div class="welcome-banner">
         <h1>欢迎回来，{{ health_data.name }}</h1>
         <p>您的全面健康档案已同步更新</p>
     </div>
 
-    <!-- 刷新控制 -->
     <div class="refresh-controls">
-        <label class="switch">
-            <input type="checkbox" id="autoRefreshToggle" checked>
-            <span class="slider"></span>
-        </label>
-        <span class="text">30 秒自动刷新</span>
+        <label class="switch"><input type="checkbox" id="autoRefreshToggle"><span class="slider"></span></label>
+        <span class="text">30秒自动刷新</span>
         <button id="manualRefreshBtn" class="btn-outline"><i class="fas fa-sync-alt"></i></button>
     </div>
 
+    <!-- 数字孪生人体 -->
+    <section class="digital-twin-section">
+        <h2><i class="fas fa-child"></i> 数字孪生健康视图</h2>
+        <div class="twin-container">
+            <div class="twin-body-wrap">
+                <svg viewBox="0 0 200 460" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="bodyGlow"><stop offset="0%" stop-color="rgba(0,245,255,.3)"/><stop offset="100%" stop-color="rgba(0,245,255,0)"/></radialGradient>
+                        <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <!-- 背景光晕 -->
+                    <ellipse cx="100" cy="230" rx="80" ry="200" fill="url(#bodyGlow)" opacity=".3"/>
+                    <!-- 头部 -->
+                    <ellipse id="bp-head" class="body-part normal" cx="100" cy="38" rx="25" ry="30" stroke-width="1.2" fill-opacity=".4" filter="url(#glow)"/>
+                    <text class="organ-label" x="100" y="42" text-anchor="middle">脑</text>
+                    <!-- 颈部 -->
+                    <rect id="bp-neck" class="body-part normal" x="92" y="68" width="16" height="16" rx="4" stroke-width=".8" fill-opacity=".3"/>
+                    <!-- 肩膀+躯干轮廓 -->
+                    <path id="bp-torso" class="body-part normal" d="M60,84 Q60,78 70,78 L130,78 Q140,78 140,84 L145,180 Q145,192 135,195 L65,195 Q55,192 55,180 Z" stroke-width="1" fill-opacity=".25" filter="url(#glow)"/>
+                    <!-- 心脏 -->
+                    <ellipse id="bp-heart" class="body-part normal" cx="110" cy="120" rx="12" ry="14" stroke-width="1.5" fill-opacity=".5" filter="url(#glow)"/>
+                    <text class="organ-label" x="110" y="123" text-anchor="middle">心</text>
+                    <!-- 左肺 -->
+                    <ellipse id="bp-left-lung" class="body-part normal" cx="80" cy="118" rx="15" ry="22" stroke-width="1" fill-opacity=".35"/>
+                    <text class="organ-label" x="80" y="121" text-anchor="middle">肺</text>
+                    <!-- 右肺 -->
+                    <ellipse id="bp-right-lung" class="body-part normal" cx="120" cy="118" rx="15" ry="22" stroke-width="1" fill-opacity=".35"/>
+                    <!-- 肝脏 -->
+                    <ellipse id="bp-liver" class="body-part normal" cx="118" cy="155" rx="18" ry="12" stroke-width="1" fill-opacity=".4"/>
+                    <text class="organ-label" x="118" y="158" text-anchor="middle">肝</text>
+                    <!-- 胃 -->
+                    <ellipse id="bp-stomach" class="body-part normal" cx="90" cy="158" rx="14" ry="11" stroke-width="1" fill-opacity=".4"/>
+                    <text class="organ-label" x="90" y="161" text-anchor="middle">胃</text>
+                    <!-- 腹部/肠道 -->
+                    <ellipse id="bp-abdomen" class="body-part normal" cx="100" cy="185" rx="28" ry="15" stroke-width=".8" fill-opacity=".25"/>
+                    <!-- 肾脏左 -->
+                    <ellipse id="bp-left-kidney" class="body-part normal" cx="78" cy="170" rx="8" ry="11" stroke-width="1" fill-opacity=".4"/>
+                    <text class="organ-label" x="68" y="173" text-anchor="middle" font-size="7">肾</text>
+                    <!-- 肾脏右 -->
+                    <ellipse id="bp-right-kidney" class="body-part normal" cx="122" cy="170" rx="8" ry="11" stroke-width="1" fill-opacity=".4"/>
+                    <!-- 骨盆 -->
+                    <path id="bp-pelvis" class="body-part normal" d="M68,200 Q100,215 132,200 L128,220 Q100,232 72,220 Z" stroke-width=".8" fill-opacity=".25"/>
+                    <!-- 左臂 -->
+                    <path id="bp-left-arm" class="body-part normal" d="M58,84 L38,88 Q28,90 26,100 L20,170 Q18,178 22,180 L28,180 Q32,178 34,170 L48,110 L55,190" stroke-width="1" fill-opacity=".2" fill="none"/>
+                    <!-- 右臂 -->
+                    <path id="bp-right-arm" class="body-part normal" d="M142,84 L162,88 Q172,90 174,100 L180,170 Q182,178 178,180 L172,180 Q168,178 166,170 L152,110 L145,190" stroke-width="1" fill-opacity=".2" fill="none"/>
+                    <!-- 左腿 -->
+                    <path id="bp-left-leg" class="body-part normal" d="M78,222 L72,320 Q70,340 72,360 L70,420 Q69,435 75,438 L82,438 Q86,435 85,420 L88,350 L92,260" stroke-width="1.2" fill-opacity=".2" fill="none" filter="url(#glow)"/>
+                    <!-- 右腿 -->
+                    <path id="bp-right-leg" class="body-part normal" d="M122,222 L128,320 Q130,340 128,360 L130,420 Q131,435 125,438 L118,438 Q114,435 115,420 L112,350 L108,260" stroke-width="1.2" fill-opacity=".2" fill="none" filter="url(#glow)"/>
+                    <!-- 血管线条装饰 -->
+                    <line x1="100" y1="68" x2="100" y2="200" stroke="rgba(0,245,255,.12)" stroke-width=".5" stroke-dasharray="3,3"/>
+                    <line x1="100" y1="200" x2="85" y2="430" stroke="rgba(0,245,255,.08)" stroke-width=".4" stroke-dasharray="2,4"/>
+                    <line x1="100" y1="200" x2="115" y2="430" stroke="rgba(0,245,255,.08)" stroke-width=".4" stroke-dasharray="2,4"/>
+                </svg>
+            </div>
+            <div class="twin-legend">
+                <div class="legend-title"><i class="fas fa-heartbeat"></i> 身体系统状态</div>
+                <div class="legend-items" id="twinLegendItems"></div>
+                <div class="twin-tip">
+                    <i class="fas fa-info-circle"></i>
+                    人体模型根据您的健康信息实时标注异常部位。
+                    <span style="color:#e74c3c;">●</span> 异常
+                    <span style="color:#f39c12;">●</span> 注意
+                    <span style="color:#48dbfb;">●</span> 提示
+                    <span style="color:#2ecc71;">●</span> 正常
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 信息卡片 -->
-    <section class="health-cards">
-        <!-- 个人信息 -->
+    <section class="health-main-grid">
         <div class="card neon-border">
             <h2><i class="fas fa-user"></i> 个人信息</h2>
             <div class="info-grid">
-                {% for key, label in
-                [('name','姓名'),('phone','手机号'),('age','年龄'),('gender','性别'),('ethnicity','民族'),('occupation','职业'),('education','文化程度'),('marital_status','婚姻')]
-                %}
-                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
-                </div>
+                {% for key, label in [('name','姓名'),('phone','手机号'),('age','年龄'),('gender','性别'),('ethnicity','民族'),('occupation','职业'),('education','文化程度'),('marital_status','婚姻')] %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value" id="field-{{ key }}">{{ health_data[key] or '-' }}</span></div>
                 {% endfor %}
             </div>
         </div>
-
-        <!-- 身体指标 -->
         <div class="card neon-border">
             <h2><i class="fas fa-heartbeat"></i> 身体指标</h2>
             <div class="info-grid">
-                {% for key, label in
-                [('height','身高'),('weight','体重'),('bmi','BMI'),('systolic_bp','收缩压'),('diastolic_bp','舒张压'),('bp_measure_time','测量时间'),('is_smoker','吸烟'),('is_drinker','饮酒'),('regular_exercise','运动频率')]
-                %}
-                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
-                </div>
+                {% for key, label in [('height','身高'),('weight','体重'),('bmi','BMI'),('systolic_bp','收缩压'),('diastolic_bp','舒张压'),('bp_measure_time','测量时间'),('is_smoker','吸烟'),('is_drinker','饮酒'),('regular_exercise','运动频率')] %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value" id="field-{{ key }}">{{ health_data[key] or '-' }}</span></div>
                 {% endfor %}
             </div>
         </div>
-
-        <!-- 健康状态 -->
-        <div class="card neon-border">
+        <div class="card neon-border health-full-width">
             <h2><i class="fas fa-stethoscope"></i> 健康状态</h2>
-            <div class="info-grid">
-                {% for key, label in
-                [('conditions','主诊断'),('allergies','过敏史'),('disease_history','疾病史'),('family_history','家族史'),('surgery_history','手术史'),('medications','用药')]
-                %}
-                <div class="info-item"><span class="label">{{ label }}:</span><span class="value">{{ health_data[key] or '-' }}</span>
-                </div>
+            <div class="info-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+                {% for key, label in [('conditions','主诊断'),('allergies','过敏史'),('disease_history','疾病史'),('family_history','家族史'),('surgery_history','手术史'),('medications','用药')] %}
+                <div class="info-item"><span class="label">{{ label }}:</span><span class="value" id="field-{{ key }}">{{ health_data[key] or '-' }}</span></div>
                 {% endfor %}
             </div>
         </div>
     </section>
 
-    <!-- 时间线 -->
+    <!-- 就诊记录 -->
     <section class="medical-timeline">
         <h2><i class="fas fa-history"></i> 就诊记录</h2>
-        <div class="timeline">
+        <div class="timeline" id="timelineContainer">
             {% for record in medical_records %}
-            <div class="timeline-item">
-                <div class="timeline-date">{{ record.date }}</div>
-                <div class="timeline-content">
-                    <div class="timeline-title">{{ record.department }} - {{ record.doctor }}</div>
-                    <div class="timeline-desc">{{ record.description }}</div>
-                </div>
-            </div>
+            <div class="timeline-item"><div class="timeline-date">{{ record.date }}</div><div class="timeline-content"><div class="timeline-title">{{ record.department }} - {{ record.doctor }}</div><div class="timeline-desc">{{ record.description }}</div></div></div>
             {% endfor %}
+            {% if not medical_records %}<div style="text-align:center;color:var(--text-dim);padding:30px;"><i class="fas fa-inbox"></i> 暂无就诊记录</div>{% endif %}
         </div>
     </section>
 
-<!-- 健康指标 -->
-<section class="metrics-table">
-    <h2><i class="fas fa-chart-bar"></i> 健康指标</h2>
-
-    <!-- 时间筛选控件 -->
-    <div class="filter-controls" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
-        <div class="filter-group">
-            <label for="startDate" style="color: var(--text-dim); margin-right: 8px;">开始日期:</label>
-            <input type="date" id="startDate" class="filter-input" style="
-                background: var(--glass);
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 8px 12px;
-                color: var(--text);
-                font-family: inherit;
-            ">
+    <!-- 健康指标 -->
+    <section class="metrics-table">
+        <h2><i class="fas fa-chart-bar"></i> 健康指标</h2>
+        <div class="filter-controls">
+            <div class="filter-group"><label for="startDate">开始:</label><input type="date" id="startDate" class="filter-input"></div>
+            <div class="filter-group"><label for="endDate">结束:</label><input type="date" id="endDate" class="filter-input"></div>
+            <button id="filterBtn" class="btn-outline"><i class="fas fa-filter"></i> 筛选</button>
+            <button id="resetFilterBtn" class="btn-outline"><i class="fas fa-redo"></i> 重置</button>
         </div>
-        <div class="filter-group">
-            <label for="endDate" style="color: var(--text-dim); margin-right: 8px;">结束日期:</label>
-            <input type="date" id="endDate" class="filter-input" style="
-                background: var(--glass);
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 8px 12px;
-                color: var(--text);
-                font-family: inherit;
-            ">
-        </div>
-        <button id="filterBtn" class="btn-outline" style="padding: 8px 16px;">
-            <i class="fas fa-filter"></i> 筛选
-        </button>
-        <button id="resetFilterBtn" class="btn-outline" style="padding: 8px 16px;">
-            <i class="fas fa-redo"></i> 重置
-        </button>
-    </div>
+        <div class="table-wrapper"><table id="metricsTable"><thead><tr><th>项目</th><th>结果</th><th>参考范围</th><th>单位</th><th>日期</th><th>状态</th></tr></thead><tbody id="metricsBody"></tbody></table></div>
+        <div class="pagination" id="pagination"></div>
+        <div id="loadingIndicator" style="text-align:center;padding:20px;color:var(--text-dim);"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+    </section>
 
-    <div class="table-wrapper">
-        <table id="metricsTable">
-            <thead>
-                <tr>
-                    <th>项目</th>
-                    <th>结果</th>
-                    <th>参考范围</th>
-                    <th>单位</th>
-                    <th>日期</th>
-                    <th>状态</th>
-                </tr>
-            </thead>
-            <tbody id="metricsBody">
-                <!-- 动态加载内容 -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- 分页控件 -->
-    <div class="pagination" id="pagination" style="
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 20px;
-        gap: 10px;
-        color: var(--text-dim);
-    ">
-        <!-- 动态生成分页 -->
-    </div>
-
-    <!-- 加载状态 -->
-    <div id="loadingIndicator" style="text-align: center; padding: 20px; color: var(--text-dim);">
-        <i class="fas fa-spinner fa-spin"></i> 加载中...
-    </div>
-</section>
-
-    <footer>
-        <p>© 2025 健康知识平台 · 您的健康数据已加密</p>
-    </footer>
+    <footer><p>© 2025 健康知识平台 · 您的健康数据已加密</p></footer>
 </div>
-<script src="{{ url_for('static', filename='js/health_profile.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('autoRefreshToggle');
+    const refreshBtn = document.getElementById('manualRefreshBtn');
+    let timer;
+
+    function refreshHealthData() {
+        fetch('/api/health_data').then(r=>r.json()).then(data => {
+            if (data.error) return;
+            ['name','phone','age','gender','ethnicity','occupation','education','marital_status',
+             'height','weight','bmi','systolic_bp','diastolic_bp','bp_measure_time',
+             'is_smoker','is_drinker','regular_exercise','conditions','allergies',
+             'disease_history','family_history','surgery_history','medications'].forEach(f => {
+                const el = document.getElementById('field-' + f);
+                if (el) el.textContent = data[f] || '-';
+            });
+            if (data.medical_records && data.medical_records.length > 0) {
+                document.getElementById('timelineContainer').innerHTML = data.medical_records.map(r =>
+                    `<div class="timeline-item"><div class="timeline-date">${r.date}</div><div class="timeline-content"><div class="timeline-title">${r.department} - ${r.doctor}</div><div class="timeline-desc">${r.description}</div></div></div>`
+                ).join('');
+            }
+            updateDigitalTwin(data);
+        }).catch(err => console.error('刷新失败:', err));
+    }
+
+    refreshBtn.addEventListener('click', () => { refreshHealthData(); loadHealthMetrics(1); });
+    const startAuto = () => { clearInterval(timer); timer = setInterval(refreshHealthData, 30000); };
+    toggle.addEventListener('change', () => toggle.checked ? startAuto() : clearInterval(timer));
+
+    // ===== 健康指标分页 =====
+    let currentPage = 1, cSD = '', cED = '';
+    function loadHealthMetrics(pg, sd, ed) {
+        pg=pg||1; sd=sd||cSD; ed=ed||cED;
+        const ld=document.getElementById('loadingIndicator'), bd=document.getElementById('metricsBody'), pa=document.getElementById('pagination');
+        ld.style.display='block'; bd.innerHTML=''; pa.innerHTML='';
+        const p=new URLSearchParams({page:pg}); if(sd)p.append('start_date',sd); if(ed)p.append('end_date',ed);
+        fetch('/api/health_metrics?'+p).then(r=>r.json()).then(d=>{
+            ld.style.display='none';
+            if(d.metrics&&d.metrics.length>0){
+                bd.innerHTML=d.metrics.map(m=>`<tr><td>${m.item}</td><td>${m.result}</td><td>${m.reference_range}</td><td>${m.unit}</td><td>${m.date}</td><td><span class="status ${m.status}">${m.status==='normal'?'正常':'异常'}</span></td></tr>`).join('');
+                const pp=d.pagination; if(pp.total_pages>1){let h='';if(pp.current_page>1)h+=`<button class="page-btn" onclick="window._chgP(${pp.current_page-1})"><i class="fas fa-chevron-left"></i></button>`;for(let i=1;i<=pp.total_pages;i++)h+=`<button class="page-btn ${i===pp.current_page?'active':''}" onclick="window._chgP(${i})">${i}</button>`;if(pp.current_page<pp.total_pages)h+=`<button class="page-btn" onclick="window._chgP(${pp.current_page+1})"><i class="fas fa-chevron-right"></i></button>`;h+=`<span style="margin-left:15px;font-size:.9rem;">共${pp.total_items}条</span>`;pa.innerHTML=h;}
+            } else { bd.innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-dim);">暂无数据</td></tr>'; }
+        }).catch(()=>{ ld.style.display='none'; bd.innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;">加载失败</td></tr>'; });
+    }
+    window._chgP = function(p){ currentPage=p; loadHealthMetrics(p); document.getElementById('metricsTable').scrollIntoView({behavior:'smooth'}); };
+    document.getElementById('filterBtn').addEventListener('click', ()=>{ const s=document.getElementById('startDate').value,e=document.getElementById('endDate').value; if(s&&e&&s>e){alert('开始不能晚于结束');return;} cSD=s;cED=e;loadHealthMetrics(1,s,e); });
+    document.getElementById('resetFilterBtn').addEventListener('click', ()=>{ document.getElementById('startDate').value=''; document.getElementById('endDate').value=''; cSD='';cED='';loadHealthMetrics(1,'',''); });
+    loadHealthMetrics(1);
+
+    // ===== 数字孪生人体标注 =====
+    const healthData = {{ health_data | tojson }};
+
+    function statusLabel(s) {
+        return {danger:'异常',warning:'注意',info:'提示',normal:'正常'}[s] || '未知';
+    }
+
+    function updateDigitalTwin(data) {
+        if (!data) data = healthData;
+        const issues = analyzeHealth(data);
+        applyToSVG(issues);
+        renderLegend(issues);
+    }
+
+    function analyzeHealth(d) {
+        const issues = [];
+        const all = ((d.conditions||'')+(d.disease_history||'')+(d.medications||'')+(d.allergies||'')+(d.family_history||'')).toLowerCase();
+
+        if (/高血压|心脏|冠心|心血管|心律|心悸|心梗/.test(all))
+            issues.push({parts:['bp-heart','bp-torso'], label:'心血管系统', detail:'检测到心血管相关问题', status:'danger'});
+        const sbp = parseInt(d.systolic_bp);
+        if (sbp && sbp >= 140)
+            issues.push({parts:['bp-heart'], label:'血压偏高', detail:'收缩压 '+sbp+' mmHg', status:'warning'});
+        if (/支气管|哮喘|肺炎|咳嗽|呼吸|肺/.test(all))
+            issues.push({parts:['bp-left-lung','bp-right-lung'], label:'呼吸系统', detail:'检测到呼吸系统问题', status:'warning'});
+        if (/胃炎|胃溃疡|肝炎|肝硬化|消化|腹|肠/.test(all))
+            issues.push({parts:['bp-stomach','bp-liver','bp-abdomen'], label:'消化系统', detail:'检测到消化系统问题', status:'warning'});
+        if (/肾炎|肾结石|尿酸|肌酐/.test(all))
+            issues.push({parts:['bp-left-kidney','bp-right-kidney'], label:'泌尿系统', detail:'检测到肾脏问题', status:'warning'});
+        if (/糖尿病|血糖|胰岛素/.test(all))
+            issues.push({parts:['bp-abdomen','bp-stomach'], label:'代谢内分泌', detail:'检测到代谢问题', status:'danger'});
+        try { const bmi=parseFloat(d.bmi); if(bmi&&bmi>=28) issues.push({parts:['bp-abdomen','bp-pelvis'],label:'BMI偏高',detail:'BMI: '+bmi,status:'warning'}); } catch(e){}
+        if (d.allergies && d.allergies!=='无' && d.allergies!=='-')
+            issues.push({parts:['bp-head'], label:'过敏体质', detail:'过敏源: '+d.allergies, status:'info'});
+        if (/关节|骨折|骨质|腰椎|颈椎/.test(all))
+            issues.push({parts:['bp-left-leg','bp-right-leg','bp-left-arm','bp-right-arm'], label:'骨骼关节', detail:'检测到骨骼问题', status:'warning'});
+        if (/脑|头晕|头痛|中风|脑梗/.test(all))
+            issues.push({parts:['bp-head','bp-neck'], label:'神经系统', detail:'检测到神经系统问题', status:'danger'});
+        if (issues.length === 0)
+            issues.push({parts:[], label:'整体健康', detail:'未检测到明显异常', status:'normal'});
+        return issues;
+    }
+
+    function applyToSVG(issues) {
+        document.querySelectorAll('.body-part').forEach(el => { el.classList.remove('warning','danger','info'); el.classList.add('normal'); });
+        const priority = {danger:3, warning:2, info:1, normal:0};
+        const partStatus = {};
+        issues.forEach(issue => {
+            (issue.parts||[]).forEach(pid => {
+                if (!partStatus[pid] || priority[issue.status] > priority[partStatus[pid]])
+                    partStatus[pid] = issue.status;
+            });
+        });
+        Object.entries(partStatus).forEach(([pid, status]) => {
+            const el = document.getElementById(pid);
+            if (el) { el.classList.remove('normal','warning','danger','info'); el.classList.add(status); }
+        });
+    }
+
+    function renderLegend(issues) {
+        document.getElementById('twinLegendItems').innerHTML = issues.map(i => `
+            <div class="legend-item">
+                <span class="legend-dot ${i.status}"></span>
+                <span class="legend-text"><strong>${i.label}</strong><br><span style="font-size:12px;color:var(--text-dim);">${i.detail}</span></span>
+                <span class="legend-status ${i.status}">${statusLabel(i.status)}</span>
+            </div>
+        `).join('');
+    }
+
+    updateDigitalTwin(healthData);
+});
+</script>
 {% endblock %}

@@ -29,11 +29,11 @@
                     <i class="fas fa-book-medical"></i>
                     <span>知识库管理</span>
                 </a>
-                <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link active">
                     <i class="fas fa-project-diagram"></i>
                     <span>知识图谱管理</span>
                 </a>
-                <a href="{{ url_for('entity_config') }}" class="nav-link active">
+                <a href="{{ url_for('entity_config') }}" class="nav-link">
                     <i class="fas fa-edit"></i>
                     <span>实体关系属性配置</span>
                 </a>
@@ -62,10 +62,6 @@
                 <input type="text" id="searchNodes" placeholder="搜索实体、关系...">
             </div>
             <div class="user-info">
-                <div class="notification">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
                 <div class="user-avatar">管</div>
                 <div class="user-details">
                     <div class="user-name">管理员</div>
@@ -118,6 +114,16 @@
                         <span><i class="fas fa-cube"></i> 实体: <span id="entity-count">0</span></span>
                         <span><i class="fas fa-link"></i> 关系: <span id="relation-count">0</span></span>
                     </div>
+                    <!-- 节点数量控制 -->
+                    <div class="kg-limit-control" style="display:flex;align-items:center;gap:8px;margin-left:12px;">
+                        <label style="color:rgba(255,255,255,.7);font-size:13px;white-space:nowrap;">加载数量:</label>
+                        <input type="range" id="kgLimitSlider" min="50" max="2000" value="500" step="50"
+                               style="width:120px;accent-color:#48dbfb;">
+                        <span id="kgLimitValue" style="color:#48dbfb;font-size:13px;min-width:45px;">500</span>
+                        <button class="btn btn-sm btn-outline-info" id="kgLimitApply" style="padding:4px 10px;font-size:12px;">
+                            <i class="fas fa-check"></i> 应用
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -143,14 +149,16 @@
                     <!-- 图例将通过JavaScript动态生成 -->
                 </div>
                 <!-- 节点详情面板 -->
-                <div class="node-details-panel" id="nodeDetailsPanel" style="display: none;">
+                <div class="node-details-panel" id="nodeDetailsPanel">
                     <div class="panel-header">
-                        <h3 id="panelTitle">节点详情</h3>
+                        <h3 id="panelTitle">
+                            <i class="fas fa-info-circle"></i> 详情信息
+                        </h3>
                         <div class="panel-controls">
-                            <button class="btn-icon" onclick="togglePanelSize()" title="切换大小">
-                                <i class="fas fa-expand"></i>
+                            <button class="btn-icon" onclick="togglePanelSize()" title="调整大小">
+                                <i class="fas fa-expand-alt"></i>
                             </button>
-                            <button class="btn-icon close-panel" onclick="closeNodeDetails()">
+                            <button class="btn-icon close-panel" onclick="closeNodeDetails()" title="关闭">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -160,7 +168,6 @@
                     </div>
                 </div>
             </div>
-
 
         </div>
     </div>

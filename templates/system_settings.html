@@ -1,268 +1,265 @@
 {% extends "base.html" %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/system_settings.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/system_settings.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="admin-container">
-  <!-- 侧边导航 -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="hospital-logo">
-        <i class="fas fa-book-medical"></i>
-        <h2>健康知识平台</h2>
-      </div>
+    <div class="admin-container">
+        <!-- 侧边导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="hospital-logo">
+                    <i class="fas fa-book-medical"></i>
+                    <h2>健康知识平台</h2>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <div class="nav-group">
+                    <div class="nav-title">核心功能</div>
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <i class="fas fa-user-injured"></i>
+                        <span>用户健康档案管理</span>
+                    </a>
+                    <a href="{{ url_for('knowledge_management') }}" class="nav-link">
+                        <i class="fas fa-book-medical"></i>
+                        <span>知识库管理</span>
+                    </a>
+                    <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>知识图谱管理</span>
+                    </a>
+                    <a href="{{ url_for('entity_config') }}" class="nav-link">
+                        <i class="fas fa-edit"></i>
+                        <span>实体关系属性配置</span>
+                    </a>
+                    <a href="{{ url_for('prompt_templates_management') }}" class="nav-link">
+                        <i class="fas fa-code"></i>
+                        <span>Prompt模板管理</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-title">系统设置</div>
+                    <a href="{{ url_for('system_settings') }}" class="nav-link active">
+                        <i class="fas fa-cog"></i>
+                        <span>系统设置</span>
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>退出登录</span>
+                    </a>
+                </div>
+            </nav>
+
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航 -->
+            <header class="top-nav">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="搜索配置项...">
+                </div>
+
+                <div class="user-info">
+                    <div class="user-avatar">管</div>
+                    <div class="user-details">
+                        <div class="user-name">管理员</div>
+                        <div class="user-role">系统管理员</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容区域 -->
+            <section class="content-area">
+                <div class="content-header">
+                    <h1>系统设置</h1>
+                    <p>管理系统配置参数和选项</p>
+                </div>
+
+                <!-- 配置表单 -->
+                <div class="settings-container">
+                    <form id="systemSettingsForm">
+                        <!-- 向量数据库配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-database"></i> 向量数据库配置</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="VECTOR_DB_TYPE">向量数据库类型</label>
+                                    <select id="VECTOR_DB_TYPE" name="VECTOR_DB_TYPE" class="form-control">
+                                        <option value="Chroma">Chroma</option>
+                                        <option value="FAISS">FAISS</option>
+                                        <option value="Pinecone">Pinecone</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="VECTOR_DB_PATH">向量数据库存储路径</label>
+                                    <input type="text" id="VECTOR_DB_PATH" name="VECTOR_DB_PATH" class="form-control" placeholder="vector_db">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 图数据库配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-project-diagram"></i> 图数据库配置</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="GRAPH_DB_TYPE">图数据库类型</label>
+                                    <select id="GRAPH_DB_TYPE" name="GRAPH_DB_TYPE" class="form-control">
+                                        <option value="Neo4j">Neo4j</option>
+                                        <option value="JanusGraph">JanusGraph</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="NEO4J_URI">Neo4j连接URI</label>
+                                    <input type="text" id="NEO4J_URI" name="NEO4J_URI" class="form-control" placeholder="bolt://localhost:7687">
+                                </div>
+                                <div class="form-group">
+                                    <label for="NEO4J_USER">Neo4j用户名</label>
+                                    <input type="text" id="NEO4J_USER" name="NEO4J_USER" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="NEO4J_PASSWORD">Neo4j密码</label>
+                                    <input type="password" id="NEO4J_PASSWORD" name="NEO4J_PASSWORD" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 大语言模型(LLM)配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-brain"></i> 大语言模型 (LLM) 配置</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="LLM_PROVIDER">默认LLM提供商</label>
+                                    <select id="LLM_PROVIDER" name="LLM_PROVIDER" class="form-control">
+                                        <option value="Tongyi">通义千问 (阿里云)</option>
+                                        <option value="DeepSeek">DeepSeek</option>
+                                        <option value="OpenAI">OpenAI</option>
+                                        <option value="Zhipu">智谱AI</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="LLM_MODEL">LLM模型名称</label>
+                                    <input type="text" id="LLM_MODEL" name="LLM_MODEL" class="form-control" placeholder="qwen-plus">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TONGYI_API">通义千问 API 地址</label>
+                                    <input type="text" id="TONGYI_API" name="TONGYI_API" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="TONGYI_KEY">通义千问 API 密钥</label>
+                                    <input type="password" id="TONGYI_KEY" name="TONGYI_KEY" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="DEEPSEEK_API">DeepSeek API 地址</label>
+                                    <input type="text" id="DEEPSEEK_API" name="DEEPSEEK_API" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="DEEPSEEK_KEY">DeepSeek API 密钥</label>
+                                    <input type="password" id="DEEPSEEK_KEY" name="DEEPSEEK_KEY" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 多模态视觉模型配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-eye"></i> 多模态视觉模型配置</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="VL_MODEL">视觉模型名称</label>
+                                    <input type="text" id="VL_MODEL" name="VL_MODEL" class="form-control" placeholder="qwen-vl-plus">
+                                </div>
+                                <div class="form-group">
+                                    <label for="VL_API_BASE">视觉模型API地址</label>
+                                    <input type="text" id="VL_API_BASE" name="VL_API_BASE" class="form-control" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="VL_API_KEY">视觉模型API密钥</label>
+                                    <input type="password" id="VL_API_KEY" name="VL_API_KEY" class="form-control" placeholder="与通义千问共用密钥则留空">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 嵌入模型配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-vector-square"></i> 嵌入模型 (Embedding) 配置</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="EMBEDDING_URL">嵌入模型API地址</label>
+                                    <input type="text" id="EMBEDDING_URL" name="EMBEDDING_URL" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="EMBEDDING_MODEL">嵌入模型名称</label>
+                                    <input type="text" id="EMBEDDING_MODEL" name="EMBEDDING_MODEL" class="form-control" placeholder="text-embedding-v1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="EMBEDDING_KEY">嵌入模型API密钥</label>
+                                    <input type="password" id="EMBEDDING_KEY" name="EMBEDDING_KEY" class="form-control" placeholder="与通义千问共用密钥则留空">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文本处理与检索参数 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-sliders-h"></i> 文本处理与检索参数</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="CHUNK_SIZE">文本块大小 (字符数)</label>
+                                    <input type="number" id="CHUNK_SIZE" name="CHUNK_SIZE" class="form-control" placeholder="1000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="CHUNK_OVERLAP">文本块重叠大小</label>
+                                    <input type="number" id="CHUNK_OVERLAP" name="CHUNK_OVERLAP" class="form-control" placeholder="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="VECTOR_TOP_K">向量检索返回数量 (Top-K)</label>
+                                    <input type="number" id="VECTOR_TOP_K" name="VECTOR_TOP_K" class="form-control" placeholder="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="GRAPH_TOP_K">图检索返回数量 (Top-K)</label>
+                                    <input type="number" id="GRAPH_TOP_K" name="GRAPH_TOP_K" class="form-control" placeholder="10">
+                                </div>
+                                <div class="form-group">
+                                    <label for="LLM_MAX_TOKENS">LLM最大输出Token数</label>
+                                    <input type="number" id="LLM_MAX_TOKENS" name="LLM_MAX_TOKENS" class="form-control" placeholder="2048">
+                                </div>
+                                <div class="form-group">
+                                    <label for="LLM_TEMPERATURE">LLM温度参数 (0-1)</label>
+                                    <input type="number" id="LLM_TEMPERATURE" name="LLM_TEMPERATURE" class="form-control" step="0.05" min="0" max="1" placeholder="0.35">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 文件类型配置 -->
+                        <div class="settings-section">
+                            <h3><i class="fas fa-file"></i> 允许的文件类型</h3>
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="ALLOWED_EXTENSIONS">允许上传的文件扩展名</label>
+                                    <input type="text" id="ALLOWED_EXTENSIONS" name="ALLOWED_EXTENSIONS"
+                                           class="form-control" placeholder="txt,pdf,doc,docx,md,xlsx,xls,pptx">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="settings-actions">
+                            <button type="button" class="btn btn-outline" id="resetSettings">
+                                <i class="fas fa-undo"></i> 重置
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 保存设置
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <nav class="nav-links">
-      <div class="nav-group">
-        <div class="nav-title">核心功能</div>
-        <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
-          <i class="fas fa-user-injured"></i>
-          <span>用户健康档案管理</span>
-        </a>
-        <a href="{{ url_for('knowledge_management') }}" class="nav-link">
-          <i class="fas fa-book-medical"></i>
-          <span>知识库管理</span>
-        </a>
-        <a href="{{ url_for('knowledge_graph') }}" class="nav-link">
-          <i class="fas fa-project-diagram"></i>
-          <span>知识图谱管理</span>
-        </a>
-      </div>
-
-      <div class="nav-group">
-        <div class="nav-title">系统设置</div>
-        <a href="{{ url_for('system_settings') }}" class="nav-link active">
-          <i class="fas fa-cog"></i>
-          <span>系统设置</span>
-        </a>
-        <a href="{{ url_for('logout') }}" class="nav-link">
-          <i class="fas fa-sign-out-alt"></i>
-          <span>退出登录</span>
-        </a>
-      </div>
-    </nav>
-
-  </aside>
-
-  <!-- 主内容区 -->
-  <main class="main-content">
-    <!-- 顶部导航 -->
-    <header class="top-nav">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" placeholder="搜索配置项...">
-      </div>
-
-      <div class="user-info">
-        <div class="notification">
-          <i class="fas fa-bell"></i>
-          <span class="badge">3</span>
-        </div>
-        <div class="user-avatar">管</div>
-        <div class="user-details">
-          <div class="user-name">管理员</div>
-          <div class="user-role">系统管理员</div>
-        </div>
-      </div>
-    </header>
-
-    <!-- 内容区域 -->
-    <section class="content-area">
-      <div class="content-header">
-        <h1>系统设置</h1>
-        <p>管理系统配置参数和选项</p>
-      </div>
-
-      <!-- 配置表单 -->
-      <div class="settings-container">
-        <form id="systemSettingsForm">
-          <!-- 向量数据库配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-database"></i> 向量数据库配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="VECTOR_DB_TYPE">向量数据库类型</label>
-                <select id="VECTOR_DB_TYPE" name="VECTOR_DB_TYPE" class="form-control">
-                  <option value="Chroma">Chroma</option>
-                  <option value="FAISS">FAISS</option>
-                  <option value="Pinecone">Pinecone</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="VECTOR_DB_PATH">向量数据库路径</label>
-                <input type="text" id="VECTOR_DB_PATH" name="VECTOR_DB_PATH" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 图数据库配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-project-diagram"></i> 图数据库配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="GRAPH_DB_TYPE">图数据库类型</label>
-                <select id="GRAPH_DB_TYPE" name="GRAPH_DB_TYPE" class="form-control">
-                  <option value="Neo4j">Neo4j</option>
-                  <option value="JanusGraph">JanusGraph</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="NEO4J_URI">Neo4j连接URI</label>
-                <input type="text" id="NEO4J_URI" name="NEO4J_URI" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="NEO4J_USER">Neo4j用户名</label>
-                <input type="text" id="NEO4J_USER" name="NEO4J_USER" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="NEO4J_PASSWORD">Neo4j密码</label>
-                <input type="password" id="NEO4J_PASSWORD" name="NEO4J_PASSWORD" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 大模型配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-brain"></i> 大模型配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="LLM_PROVIDER">LLM提供商</label>
-                <select id="LLM_PROVIDER" name="LLM_PROVIDER" class="form-control">
-                  <option value="DeepSeek">DeepSeek</option>
-                  <option value="Tongyi">通义千问</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="DEEPSEEK_API">DeepSeek API地址</label>
-                <input type="text" id="DEEPSEEK_API" name="DEEPSEEK_API" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="DEEPSEEK_KEY">DeepSeek API密钥</label>
-                <input type="password" id="DEEPSEEK_KEY" name="DEEPSEEK_KEY" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="TONGYI_API">通义千问API地址</label>
-                <input type="text" id="TONGYI_API" name="TONGYI_API" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="TONGYI_KEY">通义千问API密钥</label>
-                <input type="password" id="TONGYI_KEY" name="TONGYI_KEY" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 知识图谱配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-network-wired"></i> 知识图谱配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="KNOWLEDGE_INDEX">知识索引路径</label>
-                <input type="text" id="KNOWLEDGE_INDEX" name="KNOWLEDGE_INDEX" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="KG_SCHEMA">知识图谱模式文件</label>
-                <input type="text" id="KG_SCHEMA" name="KG_SCHEMA" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="GUIJI_KEY">轨迹API密钥</label>
-                <input type="password" id="GUIJI_KEY" name="GUIJI_KEY" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 文件路径配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-folder"></i> 文件路径配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="EXTERNAL_FILE">外部文件目录</label>
-                <input type="text" id="EXTERNAL_FILE" name="EXTERNAL_FILE" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="DOCUMENTS_DIR">文档目录</label>
-                <input type="text" id="DOCUMENTS_DIR" name="DOCUMENTS_DIR" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="SQLITE_DB_PATH">SQLite数据库路径</label>
-                <input type="text" id="SQLITE_DB_PATH" name="SQLITE_DB_PATH" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 模型配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-cogs"></i> 模型配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="EMBEDDING_URL">嵌入模型API地址</label>
-                <input type="text" id="EMBEDDING_URL" name="EMBEDDING_URL" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="EMBEDDING_MODEL">嵌入模型名称</label>
-                <input type="text" id="EMBEDDING_MODEL" name="EMBEDDING_MODEL" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 文本处理配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-file-alt"></i> 文本处理配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="CHUNK_SIZE">文本块大小</label>
-                <input type="number" id="CHUNK_SIZE" name="CHUNK_SIZE" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="CHUNK_OVERLAP">文本块重叠大小</label>
-                <input type="number" id="CHUNK_OVERLAP" name="CHUNK_OVERLAP" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 检索配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-search"></i> 检索配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="VECTOR_TOP_K">向量检索结果数量</label>
-                <input type="number" id="VECTOR_TOP_K" name="VECTOR_TOP_K" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="GRAPH_TOP_K">图检索结果数量</label>
-                <input type="number" id="GRAPH_TOP_K" name="GRAPH_TOP_K" class="form-control">
-              </div>
-            </div>
-          </div>
-
-          <!-- 文件类型配置 -->
-          <div class="settings-section">
-            <h3><i class="fas fa-file"></i> 文件类型配置</h3>
-            <div class="settings-grid">
-              <div class="form-group">
-                <label for="ALLOWED_EXTENSIONS">允许的文件扩展名</label>
-                <input type="text" id="ALLOWED_EXTENSIONS" name="ALLOWED_EXTENSIONS" class="form-control" placeholder="使用逗号分隔，如: txt,pdf,doc">
-              </div>
-            </div>
-          </div>
-
-          <!-- 操作按钮 -->
-          <div class="settings-actions">
-            <button type="button" class="btn btn-outline" id="resetSettings">
-              <i class="fas fa-undo"></i> 重置
-            </button>
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-save"></i> 保存设置
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
-  </main>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="{{ url_for('static', filename='js/system_settings.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ url_for('static', filename='js/system_settings.js') }}"></script>
 {% endblock %}

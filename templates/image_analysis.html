@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 医学影像分析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/diagnosis.css') }}">
+    <style>
+    .upload-panel { max-width: 900px; margin: 0 auto 40px; }
+    .upload-area {
+        border: 2px dashed rgba(0,245,255,.3); border-radius: 18px; padding: 40px;
+        text-align: center; cursor: pointer; transition: .3s; position: relative;
+        background: rgba(255,255,255,.02);
+    }
+    .upload-area:hover, .upload-area.dragover {
+        border-color: var(--primary); background: rgba(0,245,255,.04);
+    }
+    .upload-area i.upload-icon { font-size: 48px; color: rgba(0,245,255,.4); display: block; margin-bottom: 12px; }
+    .upload-area h3 { color: var(--text); font-size: 18px; margin-bottom: 6px; }
+    .upload-area p { color: var(--text-dim); font-size: 13px; }
+    .preview-container {
+        display: none; margin-top: 20px; text-align: center;
+    }
+    .preview-container img {
+        max-width: 100%; max-height: 350px; border-radius: 14px;
+        border: 2px solid rgba(0,245,255,.2); box-shadow: 0 8px 30px rgba(0,0,0,.3);
+    }
+    .preview-info { margin-top: 10px; display: flex; justify-content: center; gap: 15px; align-items: center; }
+    .preview-info span { color: var(--text-dim); font-size: 13px; }
+    .remove-btn {
+        background: rgba(255,107,107,.15); border: 1px solid rgba(255,107,107,.3);
+        color: #ff6b6b; border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 12px;
+    }
+    .form-row { display: flex; gap: 15px; margin: 20px 0; }
+    .form-row .form-col { flex: 1; }
+    .form-col label { display: block; color: var(--primary); font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+    .form-col select, .form-col textarea {
+        width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,245,255,.15);
+        background: rgba(255,255,255,.04); color: var(--text); font-size: 14px; font-family: inherit;
+    }
+    .form-col select option { background: #0a0a1a; }
+    .form-col select:focus, .form-col textarea:focus {
+        outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(0,245,255,.1);
+    }
+    .analyze-btn {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; padding: 16px; border: none; border-radius: 14px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: #000; font-size: 16px; font-weight: 700; cursor: pointer; transition: .3s; margin-top: 20px;
+    }
+    .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,245,255,.3); }
+    .analyze-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .result-section { max-width: 900px; margin: 0 auto; }
+    .result-card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 18px;
+        padding: 30px; backdrop-filter: blur(20px); margin-top: 25px; animation: fadeUp .5s ease;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .result-card .markdown-body { background: transparent !important; color: var(--text) !important; line-height: 1.8; }
+    .result-card .markdown-body h3 { color: var(--primary); margin-top: 20px; }
+    .result-card .markdown-body ul { padding-left: 20px; }
+    .save-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 20px; margin-top: 20px; border-radius: 12px;
+        background: rgba(0,245,255,.06); border: 1px solid rgba(0,245,255,.15);
+    }
+    .save-bar p { color: var(--text); font-size: 14px; margin: 0; }
+    .save-profile-btn {
+        padding: 10px 24px; border: none; border-radius: 10px;
+        background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff;
+        font-size: 14px; font-weight: 600; cursor: pointer; transition: .3s;
+    }
+    .save-profile-btn:hover { box-shadow: 0 5px 15px rgba(46,204,113,.4); }
+    .save-profile-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .saved-badge {
+        display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+        background: rgba(46,204,113,.12); color: #2ecc71; border-radius: 10px; font-size: 13px;
+    }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    <div class="grid-overlay"></div>
+
+    <nav class="health-nav">
+        <div class="nav-logo"><i class="fas fa-brain"></i> AI 健康助手</div>
+        <div class="nav-links">
+            <a href="{{ url_for('health_profile') }}"><i class="fas fa-user-circle"></i> 健康画像</a>
+            <a href="{{ url_for('diagnosis') }}"><i class="fas fa-magic"></i> 知识推送</a>
+            <a href="{{ url_for('image_analysis') }}" class="active"><i class="fas fa-x-ray"></i> 影像分析</a>
+            <a href="{{ url_for('profile_settings') }}"><i class="fas fa-cog"></i> 个人设置</a>
+            <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> 退出</a>
+        </div>
+    </nav>
+
+    <main class="main-container">
+        <h1 class="neon-title">🏥 AI 医学影像智能分析</h1>
+        <p class="subtitle">上传医学影像或伤患部位照片，AI将自动分析诊断并给出治疗方案</p>
+
+        <div class="upload-panel glass">
+            <div class="upload-area" id="dropArea">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h3>拖放图片或点击上传</h3>
+                <p>支持 JPG、PNG、BMP、WebP 等格式 · 医学影像 / X光 / CT / MRI / 伤患照片</p>
+                <input type="file" id="imageInput" accept="image/*" style="display:none;">
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" src="" alt="预览">
+                <div class="preview-info">
+                    <span id="fileInfo"></span>
+                    <button class="remove-btn" id="removeBtn"><i class="fas fa-times"></i> 移除</button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label><i class="fas fa-tag"></i> 图片类型</label>
+                    <select id="imageType">
+                        <option value="X光片">X光片</option>
+                        <option value="CT扫描">CT扫描</option>
+                        <option value="MRI核磁">MRI核磁共振</option>
+                        <option value="超声图像">超声图像</option>
+                        <option value="皮肤病变">皮肤病变/伤口</option>
+                        <option value="外伤照片">外伤/受伤部位</option>
+                        <option value="眼科图像">眼科图像</option>
+                        <option value="病理切片">病理切片</option>
+                        <option value="其他" selected>其他/通用</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label><i class="fas fa-comment-medical"></i> 补充描述（选填）</label>
+                    <textarea id="userDesc" rows="2" placeholder="如：右手腕肿胀两天、胸片复查..."></textarea>
+                </div>
+            </div>
+
+            <button class="analyze-btn" id="analyzeBtn" disabled>
+                <i class="fas fa-microscope"></i> <span>开始AI分析</span>
+            </button>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display:none;">
+            <div class="result-card">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <h3 style="color:var(--primary);font-size:20px;">🔬 AI 诊断分析报告</h3>
+                    <p style="color:var(--text-dim);font-size:13px;" id="resultTime"></p>
+                </div>
+                <div class="markdown-body" id="resultContent"></div>
+                <div class="save-bar" id="saveBar">
+                    <p><i class="fas fa-bookmark"></i> 是否将此次分析结果同步到您的个人健康档案？</p>
+                    <button class="save-profile-btn" id="saveToProfileBtn"><i class="fas fa-check"></i> 更新到健康档案</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof particlesJS !== 'undefined') {
+            particlesJS('particles-js', {
+                particles: { number:{value:50}, color:{value:'#00f5ff'}, opacity:{value:0.3}, size:{value:2}, move:{speed:1.5} },
+                interactivity: { events:{onhover:{enable:true,mode:'repulse'}} }
+            });
+        }
+        marked.setOptions({ highlight: (code,lang) => hljs.highlightAuto(code,[lang]).value, breaks:true, gfm:true });
+
+        const dropArea = document.getElementById('dropArea');
+        const imageInput = document.getElementById('imageInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        let selectedFile = null;
+        let currentAnalysisId = null;
+
+        dropArea.addEventListener('click', () => imageInput.click());
+        dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('dragover'); });
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+        dropArea.addEventListener('drop', e => { e.preventDefault(); dropArea.classList.remove('dragover'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+        imageInput.addEventListener('change', () => { if(imageInput.files.length) handleFile(imageInput.files[0]); });
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) { Swal.fire({icon:'warning',title:'请选择图片文件',background:'rgba(10,10,26,.95)',color:'#e0f0ff'}); return; }
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                previewImage.src = e.target.result;
+                previewContainer.style.display = 'block';
+                dropArea.style.display = 'none';
+                document.getElementById('fileInfo').textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('removeBtn').addEventListener('click', () => {
+            selectedFile = null; imageInput.value = '';
+            previewContainer.style.display = 'none'; dropArea.style.display = 'block';
+            analyzeBtn.disabled = true;
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>AI正在分析中...</span>';
+            document.getElementById('resultSection').style.display = 'none';
+
+            const fd = new FormData();
+            fd.append('image', selectedFile);
+            fd.append('image_type', document.getElementById('imageType').value);
+            fd.append('description', document.getElementById('userDesc').value);
+
+            try {
+                const res = await fetch('/api/analyze_image', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || '分析失败');
+
+                currentAnalysisId = data.analysis_id;
+                document.getElementById('resultContent').innerHTML = marked.parse(data.analysis_result);
+                document.getElementById('resultTime').textContent = '分析时间：' + new Date().toLocaleString('zh-CN');
+                document.getElementById('resultSection').style.display = 'block';
+                document.getElementById('saveBar').style.display = 'flex';
+                document.getElementById('saveToProfileBtn').disabled = false;
+                document.getElementById('saveToProfileBtn').innerHTML = '<i class="fas fa-check"></i> 更新到健康档案';
+                document.getElementById('resultSection').scrollIntoView({behavior:'smooth'});
+            } catch(e) {
+                Swal.fire({icon:'error',title:'分析失败',text:e.message,background:'rgba(10,10,26,.95)',color:'#e0f0ff'});
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i class="fas fa-microscope"></i> <span>开始AI分析</span>';
+            }
+        });
+
+        document.getElementById('saveToProfileBtn').addEventListener('click', async () => {
+            if (!currentAnalysisId) return;
+            const btn = document.getElementById('saveToProfileBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+            try {
+                const res = await fetch('/api/save_image_analysis', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({analysis_id: currentAnalysisId})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('saveBar').innerHTML = '<div class="saved-badge"><i class="fas fa-check-circle"></i> 已同步到您的健康档案</div>';
+                    Swal.fire({icon:'success',title:'已保存',text:'分析结果已同步到您的健康档案',timer:2000,background:'rgba(10,10,26,.95)',color:'#e0f0ff',confirmButtonColor:'#00f5ff'});
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch(e) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> 更新到健康档案';
+                Swal.fire({icon:'error',title:'保存失败',text:e.message,background:'rgba(10,10,26,.95)',color:'#e0f0ff'});
+            }
+        });
+    });
+    </script>
+</body>
+</html>

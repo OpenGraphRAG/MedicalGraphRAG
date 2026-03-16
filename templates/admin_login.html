@@ -1,239 +1,112 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康知识平台 - 管理员登录</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            background: #0a0a1a; font-family: 'Noto Sans SC', sans-serif;
+            position: relative; overflow: hidden;
+        }
+        body::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,245,255,.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,245,255,.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .login-container {
+            position: relative; z-index: 2; width: 100%; max-width: 440px; padding: 20px;
+        }
+        .login-box {
+            background: rgba(255,255,255,.06); backdrop-filter: blur(20px);
+            border-radius: 20px; padding: 40px 35px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.4);
+            border: 1px solid rgba(0,245,255,.15);
+            animation: fadeIn .8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-header { text-align: center; margin-bottom: 35px; }
+        .login-header i { font-size: 50px; color: #00f5ff; margin-bottom: 15px; display: block; text-shadow: 0 0 20px rgba(0,245,255,.5); }
+        .login-header h1 { font-family: 'Orbitron', sans-serif; color: #e0f0ff; font-size: 22px; letter-spacing: 1px; }
+        .login-header p { color: #8a9ba8; font-size: 14px; margin-top: 8px; }
+        .admin-badge { display: inline-block; background: linear-gradient(135deg, #ff00ff, #00f5ff); color: #000; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-top: 10px; }
+        .form-group { margin-bottom: 22px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #e0f0ff; font-weight: 500; font-size: 14px; }
+        .input-wrap { position: relative; }
+        .input-wrap i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(0,245,255,.6); font-size: 16px; }
+        .input-wrap input {
+            width: 100%; padding: 14px 15px 14px 45px; border: 1px solid rgba(0,245,255,.2);
+            border-radius: 12px; background: rgba(255,255,255,.05); color: #e0f0ff;
+            font-size: 15px; transition: .3s; outline: none;
+        }
+        .input-wrap input::placeholder { color: rgba(255,255,255,.3); }
+        .input-wrap input:focus { border-color: #00f5ff; box-shadow: 0 0 0 3px rgba(0,245,255,.15); }
+        .login-btn {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, #00f5ff, #ff00ff); color: #000;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: .3s;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 1px; margin-top: 10px;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,245,255,.4); }
+        .flash { padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; text-align: center; }
+        .flash.error { background: rgba(255,0,100,.15); color: #ff6b6b; border: 1px solid rgba(255,0,100,.3); }
+        .flash.success { background: rgba(0,255,100,.15); color: #2ecc71; border: 1px solid rgba(0,255,100,.3); }
+        .login-footer { text-align: center; margin-top: 25px; }
+        .login-footer a { color: rgba(0,245,255,.6); text-decoration: none; font-size: 13px; transition: .3s; }
+        .login-footer a:hover { color: #00f5ff; }
+        @media (max-width: 480px) { .login-box { padding: 30px 20px; } .login-header h1 { font-size: 18px; } }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <i class="fas fa-user-shield"></i>
+                <h1>管理员控制台</h1>
+                <p>健康知识平台后台管理系统</p>
+                <span class="admin-badge">ADMIN ACCESS</span>
+            </div>
 
-{% block content %}
-<div class="admin-login-container">
-    <div class="admin-login-box">
-        <div class="admin-login-header">
-            <i class="fas fa-user-shield"></i>
-            <h1>健康知识平台 - 管理员登录</h1>
-            <p>请使用管理员账号登录系统后台</p>
-        </div>
-
-        <form class="admin-login-form" method="POST" action="{{ url_for('admin_login') }}">
-            {% with messages = get_flashed_messages(with_categories=true) %}
+            <form method="POST" action="{{ url_for('admin_login') }}">
+                {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    <div class="flash-messages">
-                        {% for category, message in messages %}
-                            <div class="flash {{ category }}">{{ message }}</div>
-                        {% endfor %}
-                    </div>
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
                 {% endif %}
-            {% endwith %}
+                {% endwith %}
 
-            <div class="form-group">
-                <label for="username">管理员账号</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="username" name="username" placeholder="请输入管理员账号" required>
+                <div class="form-group">
+                    <label for="username">管理员账号</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="请输入管理员账号" required>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label for="password">密码</label>
-                <div class="input-with-icon">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="admin-login-btn">管理员登录</button>
+                <button type="submit" class="login-btn">进入管理后台</button>
+            </form>
 
-            <div class="admin-login-footer">
-                <p><a href="{{ url_for('login') }}">返回患者登录</a></p>
+            <div class="login-footer">
+                <p><a href="{{ url_for('login') }}">← 返回前台登录</a></p>
             </div>
-        </form>
+        </div>
     </div>
-</div>
-
-<style>
-.admin-login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 20px;
-}
-
-.admin-login-box {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 420px;
-    padding: 35px;
-    position: relative;
-    overflow: hidden;
-}
-
-.admin-login-box::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 5px;
-    background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-}
-
-.admin-login-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.admin-login-header i {
-    font-size: 42px;
-    color: #4b6cb7;
-    margin-bottom: 15px;
-    display: block;
-}
-
-.admin-login-header h1 {
-    color: #2c3e50;
-    margin: 0 0 8px 0;
-    font-size: 24px;
-    font-weight: 600;
-}
-
-.admin-login-header p {
-    color: #7f8c8d;
-    margin: 0;
-    font-size: 14px;
-}
-
-.admin-login-form .form-group {
-    margin-bottom: 20px;
-}
-
-.admin-login-form label {
-    display: block;
-    margin-bottom: 8px;
-    color: #2c3e50;
-    font-weight: 500;
-    font-size: 14px;
-}
-
-.input-with-icon {
-    position: relative;
-}
-
-.input-with-icon i {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #7f8c8d;
-    font-size: 16px;
-}
-
-.input-with-icon input {
-    width: 100%;
-    padding: 12px 15px 12px 45px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 15px;
-    transition: all 0.3s;
-    box-sizing: border-box;
-}
-
-.input-with-icon input:focus {
-    outline: none;
-    border-color: #4b6cb7;
-    box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.1);
-}
-
-.admin-login-btn {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 10px;
-}
-
-.admin-login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(75, 108, 183, 0.3);
-}
-
-.admin-login-footer {
-    text-align: center;
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-
-.admin-login-footer a {
-    color: #4b6cb7;
-    text-decoration: none;
-    font-size: 14px;
-    transition: color 0.2s;
-}
-
-.admin-login-footer a:hover {
-    color: #182848;
-    text-decoration: underline;
-}
-
-.flash-messages {
-    margin-bottom: 20px;
-}
-
-.flash {
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.flash.error {
-    background-color: #ffebee;
-    color: #c62828;
-    border: 1px solid #ef9a9a;
-}
-
-.flash.success {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #a5d6a7;
-}
-
-@media (max-width: 480px) {
-    .admin-login-box {
-        padding: 25px;
-    }
-
-    .admin-login-header h1 {
-        font-size: 20px;
-    }
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 表单验证
-    const form = document.querySelector('.admin-login-form');
-    form.addEventListener('submit', function(e) {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value;
-
-        if (!username) {
-            e.preventDefault();
-            alert('请输入管理员账号');
-            return false;
-        }
-
-        if (!password) {
-            e.preventDefault();
-            alert('请输入密码');
-            return false;
-        }
-    });
-});
-</script>
-{% endblock %}
+</body>
+</html>

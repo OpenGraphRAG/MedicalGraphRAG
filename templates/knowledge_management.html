@@ -1,397 +1,309 @@
 {% extends "base.html" %}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/knowledge.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-    /* 表格样式优化 */
-    .knowledge-files .table {
-        background-color: rgba(26, 26, 46, 0.6);
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .knowledge-files .table th {
-        background-color: rgba(26, 26, 46, 0.8);
-        color: var(--text);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        font-weight: 600;
-    }
-
-    .knowledge-files .table td {
-        background-color: rgba(26, 26, 46, 0.4);
-        color: var(--text);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 15px;
-        vertical-align: middle;
-    }
-
-    .knowledge-files .table tr:hover td {
-        background-color: rgba(26, 26, 46, 0.7);
-    }
-
-    /* 状态指示器移除 */
-    .status-indicator {
-        display: none;
-    }
-
+.tags-area { display: flex; flex-wrap: wrap; gap: 6px; margin: 15px 0 5px; }
+.tags-area .tag-pill {
+    background: rgba(72,219,251,.12); color: #48dbfb;
+    padding: 4px 12px; border-radius: 12px; font-size: 12px;
+    border: 1px solid rgba(72,219,251,.25);
+}
+.vectorized-badge { background: rgba(46,204,113,.15); color: #2ecc71; padding: 3px 10px; border-radius: 8px; font-size: 11px; }
+.not-vectorized-badge { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); padding: 3px 10px; border-radius: 8px; font-size: 11px; }
+.size-text { color: rgba(255,255,255,.5); font-size: 12px; display: block; margin-top: 4px; }
+.docs-table { width: 100%; border-collapse: collapse; background: rgba(26,26,46,.6); border-radius: 10px; overflow: hidden; }
+.docs-table th { background: rgba(26,26,46,.8); color: var(--text); border-bottom: 1px solid rgba(255,255,255,.1); padding: 13px 15px; font-weight: 600; text-align: left; font-size: 13px; }
+.docs-table td { color: var(--text); border-bottom: 1px solid rgba(255,255,255,.05); padding: 13px 15px; vertical-align: middle; font-size: 13px; }
+.docs-table tr:hover td { background: rgba(26,26,46,.5); }
+.vec-output { background: rgba(26,26,46,.6); border-radius: 12px; border: 1px solid rgba(255,255,255,.1); margin-top: 25px; overflow: hidden; }
+.vec-output-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: rgba(40,40,60,.5); border-bottom: 1px solid rgba(255,255,255,.1); }
+.vec-output-header h3 { color: #48dbfb; font-size: 15px; margin: 0; }
+.vec-output-body { padding: 20px; max-height: 350px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+.vec-output-body .info-message { color: #48dbfb; padding: 3px 0; }
+.vec-output-body .success-message { color: #2ecc71; padding: 3px 0; font-weight: 500; }
+.vec-output-body .error-message { color: #ff6b6b; padding: 3px 0; }
+.vec-empty { text-align: center; color: rgba(255,255,255,.35); padding: 35px; }
+.vec-empty i { font-size: 28px; display: block; margin-bottom: 8px; }
+.action-btns { display: flex; gap: 5px; }
+.action-btns button { width: 30px; height: 30px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 1px solid; }
+.btn-vec { background: rgba(46,204,113,.12); border-color: rgba(46,204,113,.3); color: #2ecc71; }
+.btn-vec:hover { background: rgba(46,204,113,.25); }
+.btn-del { background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.3); color: #ff6b6b; }
+.btn-del:hover { background: rgba(255,107,107,.25); }
+/* Modal inputs */
+.km-input { width: 100%; padding: 10px 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: var(--text); font-size: 14px; transition: .3s; }
+.km-input:focus { outline: none; border-color: #48dbfb; box-shadow: 0 0 0 2px rgba(72,219,251,.15); }
+.km-label { color: var(--text); margin-bottom: 6px; display: block; font-size: 14px; font-weight: 500; }
+.km-hint { color: rgba(255,255,255,.4); font-size: 12px; margin-top: 4px; }
+.km-group { margin-bottom: 18px; }
+.type-tabs { display: flex; gap: 10px; margin-bottom: 22px; }
+.type-tab { flex: 1; text-align: center; padding: 12px; border-radius: 10px; cursor: pointer; transition: .3s; font-size: 14px; }
+.type-tab.active { background: rgba(72,219,251,.15); border: 1px solid rgba(72,219,251,.3); color: #48dbfb; }
+.type-tab:not(.active) { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.5); }
+.type-tab:not(.active):hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+.upload-zone { border: 2px dashed rgba(72,219,251,.3); border-radius: 12px; padding: 35px; text-align: center; cursor: pointer; transition: .3s; }
+.upload-zone:hover { border-color: rgba(72,219,251,.6); background: rgba(72,219,251,.03); }
+.upload-zone i { font-size: 36px; color: rgba(72,219,251,.5); display: block; margin-bottom: 10px; }
+.file-preview { display: none; padding: 14px; background: rgba(255,255,255,.05); border-radius: 8px; margin-top: 12px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-container d-flex">
-    <!-- 侧边导航 -->
-    <div class="sidebar">
-        <div class="sidebar-header p-3">
-            <div class="hospital-logo d-flex align-items-center">
-                <i class="fas fa-book-medical fa-2x me-2"></i>
-                <h2 class="mb-0">健康知识平台</h2>
+<div class="admin-container">
+    <aside class="sidebar">
+        <div class="sidebar-header"><div class="hospital-logo"><i class="fas fa-book-medical"></i><h2>健康知识平台</h2></div></div>
+        <nav class="nav-links">
+            <div class="nav-group"><div class="nav-title">核心功能</div>
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link"><i class="fas fa-user-injured"></i><span>用户健康档案管理</span></a>
+                <a href="{{ url_for('knowledge_management') }}" class="nav-link active"><i class="fas fa-book-medical"></i><span>知识库管理</span></a>
+                <a href="{{ url_for('knowledge_graph') }}" class="nav-link"><i class="fas fa-project-diagram"></i><span>知识图谱管理</span></a>
+                <a href="{{ url_for('entity_config') }}" class="nav-link"><i class="fas fa-edit"></i><span>实体关系属性配置</span></a>
+                <a href="{{ url_for('prompt_templates_management') }}" class="nav-link"><i class="fas fa-code"></i><span>Prompt模板管理</span></a>
             </div>
-        </div>
-
-        <div class="nav-links p-3">
-            <div class="nav-group mb-4">
-                <div class="nav-title text-uppercase small mb-2">核心功能</div>
-                <a href="{{ url_for('admin_dashboard') }}" class="nav-link d-block p-2 mb-2 rounded">
-                    <i class="fas fa-user-injured me-2"></i>
-                    <span>用户健康档案管理</span>
-                </a>
-                <a href="{{ url_for('knowledge_management') }}" class="nav-link active d-block p-2 mb-2 rounded">
-                    <i class="fas fa-book-medical me-2"></i>
-                    <span>知识库管理</span>
-                </a>
-                <a href="{{ url_for('knowledge_graph') }}" class="nav-link d-block p-2 mb-2 rounded">
-                    <i class="fas fa-project-diagram me-2"></i>
-                    <span>知识图谱管理</span>
-                </a>
-                <a href="{{ url_for('entity_config') }}" class="nav-link d-block p-2 mb-2 rounded">
-                    <i class="fas fa-edit"></i>
-                    <span>实体关系属性配置</span>
-                </a>
-                <a href="{{ url_for('prompt_templates_management') }}" class="nav-link d-block p-2 mb-2 rounded">
-                    <i class="fas fa-code"></i>
-                    <span>Prompt模板管理</span>
-                </a>
+            <div class="nav-group"><div class="nav-title">系统设置</div>
+                <a href="{{ url_for('system_settings') }}" class="nav-link"><i class="fas fa-cog"></i><span>系统设置</span></a>
+                <a href="{{ url_for('logout') }}" class="nav-link"><i class="fas fa-sign-out-alt"></i><span>退出登录</span></a>
             </div>
+        </nav>
+    </aside>
 
-            <div class="nav-group">
-                <div class="nav-title text-uppercase small mb-2">系统设置</div>
-                <a href="{{ url_for('system_settings') }}" class="nav-link d-block p-2 mb-2 rounded">
-                    <i class="fas fa-cog me-2"></i>
-                    <span>系统设置</span>
-                </a>
-                <a href="{{ url_for('logout') }}" class="nav-link d-block p-2 rounded">
-                    <i class="fas fa-sign-out-alt me-2"></i>
-                    <span>退出登录</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- 主内容区 -->
-    <div class="main-content">
-        <!-- 顶部导航 -->
-        <div class="top-nav">
+    <main class="main-content">
+        <header class="top-nav">
             <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="搜索知识文档..."></div>
-            <div class="user-info">
-                <i class="fas fa-bell"><span class="badge">3</span></i>
-                <div class="user-avatar">管</div>
-                <div class="user-name">管理员</div>
-            </div>
-        </div>
+            <div class="user-info"><div class="user-avatar">管</div><div class="user-details"><div class="user-name">管理员</div><div class="user-role">系统管理员</div></div></div>
+        </header>
 
-        <!-- 内容区 -->
-        <div class="content-area">
-            <div class="content-header">
-                <h1>健康知识库管理</h1>
-                <p>上传和管理健康知识文档，构建智能知识库</p>
-            </div>
+        <section class="content-area">
+            <div class="content-header"><h1>健康知识库管理</h1><p>上传和管理健康知识文档，构建智能知识库</p></div>
 
-            <!-- 统计卡片 -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-file-alt"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ knowledge_docs|length }}</h3>
-                        <p>文档总数</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-database"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ vector_db_stats.get('document_count', '0') }}</h3>
-                        <p>已向量化</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-tags"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>24</h3>
-                        <p>标签分类</p>
-                    </div>
-                </div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-alt"></i></div><div class="stat-info"><h3 id="statTotalDocs">-</h3><p>文档总数</p><span class="size-text" id="statFileSize"></span></div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-database"></i></div><div class="stat-info"><h3 id="statVectorized">-</h3><p>已向量化</p><span class="size-text" id="statVectorSize"></span></div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-tags"></i></div><div class="stat-info"><h3 id="statTagCount">-</h3><p>知识领域</p></div></div>
             </div>
-            <!-- 在 action-bar 部分添加修复按钮 -->
-            <div class="action-bar">
-                <button class="btn btn-primary" id="addDocumentBtn">
-                    <i class="fas fa-plus-circle me-2"></i>新增文档
-                </button>
-                <div class="action-group">
-                    <button class="btn btn-outline" id="fixPathsBtn">
-                        <i class="fas fa-wrench me-2"></i>修复文件路径
-                    </button>
-                    <button class="btn btn-outline">
-                        <i class="fas fa-sync-alt me-2"></i>刷新
-                    </button>
-                    <button class="btn btn-outline">
-                        <i class="fas fa-filter me-2"></i>筛选
-                    </button>
-                    <button class="btn btn-outline">
-                        <i class="fas fa-download me-2"></i>导出
-                    </button>
+            <div class="tags-area" id="tagsArea"></div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0;">
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" id="addDocumentBtn"><i class="fas fa-plus-circle"></i> 新增文档</button>
+                    <button class="btn btn-outline" id="refreshDocsBtn"><i class="fas fa-sync-alt"></i> 刷新</button>
                 </div>
+                <div class="records-count" id="docsCount" style="color:rgba(255,255,255,.5);font-size:13px;"></div>
             </div>
-            <!-- 知识库文件列表 -->
+
             <div class="knowledge-files">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th>文档名称</th>
-                            <th>类型</th>
-                            <th>标签</th>
-                            <th>上传时间</th>
-                            <th>操作</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for doc in knowledge_docs %}
-                        <tr>
-                            <td>
-                                <div class="file-info">
-                                    <i class="fas fa-file me-2"></i>
-                                    <div class="file-details">
-                                        <div class="file-name">{{ doc.name }}</div>
-                                        <div class="file-meta">
-                                            {% if doc.type == "file" %}
-                                            {% set file_ext = doc.path.split('.')[-1].lower() %}
-                                            <span class="file-type">{{ file_ext }}文件</span>
-                                            <span class="file-size">• 2.4MB</span>
-                                            {% else %}
-                                            <span class="file-type">网页链接</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                {% if doc.type == "file" %}
-                                <span class="badge badge-file">文件</span>
-                                {% else %}
-                                <span class="badge badge-url">URL</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if doc.tags %}
-                                <div class="tags-container">
-                                    {% for tag in doc.tags.split(',') %}
-                                    <span class="tag">{{ tag }}</span>
-                                    {% endfor %}
-                                </div>
-                                {% else %}
-                                <span class="text-muted">无标签</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ doc.created_at }}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-icon view" data-id="{{ doc.id }}" title="查看">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon edit edit-doc"
-                                            data-id="{{ doc.id }}"
-                                            data-name="{{ doc.name }}"
-                                            data-type="{{ doc.type }}"
-                                            data-path="{{ doc.path }}"
-                                            data-tags="{{ doc.tags }}"
-                                            title="编辑">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn-icon vectorize vectorize-doc"
-                                            data-id="{{ doc.id }}"
-                                            data-name="{{ doc.name }}"
-                                            title="向量化">
-                                        <i class="fas fa-brain"></i>
-                                    </button>
-                                    <button class="btn-icon delete delete-doc"
-                                            data-id="{{ doc.id }}"
-                                            data-name="{{ doc.name }}"
-                                            title="删除">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="empty-state">
-                                <div class="empty-content">
-                                    <i class="fas fa-file-alt"></i>
-                                    <h3>知识库中没有文档</h3>
-                                    <p>添加您的第一个文档开始构建知识库</p>
-                                    <button class="btn btn-primary" id="addFirstDocumentBtn">
-                                        <i class="fas fa-plus me-2"></i>添加文档
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <table class="docs-table"><thead><tr><th>文档名称</th><th>类型</th><th>大小</th><th>标签</th><th>状态</th><th>时间</th><th width="80">操作</th></tr></thead>
+                <tbody id="docsTableBody"><tr><td colspan="7" style="text-align:center;padding:40px;color:rgba(255,255,255,.4);"><i class="fas fa-spinner fa-spin"></i> 加载中...</td></tr></tbody></table>
             </div>
+            <div id="docsPagination" style="display:flex;justify-content:center;gap:8px;margin-top:18px;"></div>
 
-            <div class="vectorization-output">
-                <div class="output-header">
-                    <h2><i class="fas fa-terminal me-2"></i> 处理输出</h2>
-                    <button class="btn btn-outline" id="clearOutput">
-                        <i class="fas fa-trash me-2"></i> 清空输出
-                    </button>
+            <div class="vec-output">
+                <div class="vec-output-header"><h3><i class="fas fa-terminal"></i> 向量化处理输出</h3>
+                    <button class="btn btn-outline" id="clearOutput" style="padding:5px 12px;font-size:12px;"><i class="fas fa-trash"></i> 清空</button>
                 </div>
-
-                <div class="output-container" id="vectorOutput">
-                    <div class="empty-output">
-                        <i class="fas fa-info-circle"></i>
-                        <p>选择文档并点击"向量化"按钮开始处理</p>
-                    </div>
-                </div>
+                <div class="vec-output-body" id="vectorOutput"><div class="vec-empty"><i class="fas fa-info-circle"></i><p>选择文档点击向量化按钮开始处理</p></div></div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 </div>
 
-<!-- 文档模态框 -->
+<!-- 新增/编辑文档模态框 -->
 <div class="modal" id="documentModal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="modalTitle">新增文档</h2>
-            <span class="close">&times;</span>
-        </div>
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header"><h2 id="modalTitle">新增文档</h2><span class="close" id="closeDocModal">&times;</span></div>
         <div class="modal-body">
-            <!-- 文档类型选择器 -->
-            <div class="document-type-tabs">
-                <div class="document-type-tab active" data-type="file">
-                    <i class="fas fa-file-upload me-2"></i>上传本地文档
-                </div>
-                <div class="document-type-tab" data-type="url">
-                    <i class="fas fa-link me-2"></i>添加在线文档
-                </div>
+            <div class="type-tabs">
+                <div class="type-tab active" data-type="file"><i class="fas fa-file-upload"></i> 上传文件</div>
+                <div class="type-tab" data-type="url"><i class="fas fa-link"></i> 在线链接</div>
             </div>
-
-            <!-- 文件上传表单 -->
-            <div class="document-form-section active" id="fileFormSection">
-                <!-- 文件上传区域 -->
-                <div class="upload-area" id="dropArea">
+            <div id="fileSection">
+                <div class="upload-zone" id="dropArea">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <h4>拖放文件到此处或点击上传</h4>
-                    <p>支持格式: PDF, DOC, DOCX, TXT, MD</p>
-                    <button class="btn btn-outline" id="selectFileBtn">
-                        <i class="fas fa-folder-open me-2"></i>选择文件
-                    </button>
-                    <input type="file" id="fileInput" class="d-none" accept=".pdf,.doc,.docx,.txt,.md">
+                    <h4 style="color:var(--text);margin-bottom:5px;">拖放文件或点击上传</h4>
+                    <p style="color:rgba(255,255,255,.4);font-size:13px;">支持 PDF, DOC, DOCX, TXT, MD</p>
+                    <button class="btn btn-outline" id="selectFileBtn" type="button" style="margin-top:8px;"><i class="fas fa-folder-open"></i> 选择文件</button>
+                    <input type="file" id="fileInput" style="display:none;" accept=".pdf,.doc,.docx,.txt,.md">
                 </div>
-
-                <!-- 文件信息显示 -->
-                <div class="file-info-display" id="fileInfo">
-                    <div class="file-detail">
-                        <i class="fas fa-file-pdf"></i>
-                        <div class="file-meta">
-                            <div id="fileName">document.pdf</div>
-                            <div id="fileSize">2.4MB</div>
-                        </div>
-                    </div>
-                    <button type="button" id="removeFile" class="btn-icon">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <!-- 文档名称输入 -->
-                <div class="form-group">
-                    <label for="fileDocumentName">
-                        <i class="fas fa-file-signature me-2"></i>文档名称 *
-                    </label>
-                    <input type="text" id="fileDocumentName" placeholder="输入文档名称" required>
-                </div>
-
-                <!-- 标签输入 -->
-                <div class="form-group">
-                    <label for="fileTags">
-                        <i class="fas fa-tags me-2"></i>文档标签
-                    </label>
-                    <input type="text" id="fileTags" placeholder="例如：高血压,糖尿病,饮食指南">
-                    <div class="form-text">多个标签用逗号分隔</div>
-                </div>
+                <div class="file-preview" id="fileInfo"><div style="display:flex;justify-content:space-between;align-items:center;"><div><i class="fas fa-file" style="color:#48dbfb;margin-right:8px;"></i><span id="fileName"></span> <span id="fileSize" style="color:rgba(255,255,255,.4);font-size:12px;"></span></div><button type="button" id="removeFile" style="background:none;border:none;color:#ff6b6b;cursor:pointer;"><i class="fas fa-times"></i></button></div></div>
+                <div class="km-group"><label class="km-label">文档名称 *</label><input type="text" class="km-input" id="fileDocumentName" placeholder="输入文档名称"></div>
+                <div class="km-group"><label class="km-label">文档标签</label><input type="text" class="km-input" id="fileTags" placeholder="高血压,糖尿病,饮食指南"><div class="km-hint">多个标签用逗号分隔</div></div>
             </div>
-
-            <!-- URL表单 -->
-            <div class="document-form-section" id="urlFormSection">
-                <!-- 文档名称输入 -->
-                <div class="form-group">
-                    <label for="urlDocumentName">
-                        <i class="fas fa-file-signature me-2"></i>文档名称 *
-                    </label>
-                    <input type="text" id="urlDocumentName" placeholder="输入文档名称" required>
-                </div>
-
-                <!-- URL输入 -->
-                <div class="form-group">
-                    <label for="urlLink">
-                        <i class="fas fa-link me-2"></i>文档URL *
-                    </label>
-                    <input type="url" id="urlLink" placeholder="https://example.com/document" required>
-                    <div class="form-text">请输入完整的文档URL地址</div>
-                </div>
-
-                <!-- 标签输入 -->
-                <div class="form-group">
-                    <label for="urlTags">
-                        <i class="fas fa-tags me-2"></i>文档标签
-                    </label>
-                    <input type="text" id="urlTags" placeholder="例如：高血压,糖尿病,饮食指南">
-                    <div class="form-text">多个标签用逗号分隔</div>
-                </div>
-
-                <!-- 爬取状态显示 -->
-                <div class="crawler-status" id="crawlerStatus" style="display: none;">
-                    <div class="progress mb-2">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated"
-                             role="progressbar" style="width: 0%"></div>
-                    </div>
-                    <p class="crawler-message">正在爬取网页内容...</p>
-                </div>
+            <div id="urlSection" style="display:none;">
+                <div class="km-group"><label class="km-label">文档名称 *</label><input type="text" class="km-input" id="urlDocumentName" placeholder="输入文档名称"></div>
+                <div class="km-group"><label class="km-label">文档URL *</label><input type="url" class="km-input" id="urlLink" placeholder="https://example.com/article"><div class="km-hint">输入完整URL，系统将自动爬取内容并可向量化</div></div>
+                <div class="km-group"><label class="km-label">文档标签</label><input type="text" class="km-input" id="urlTags" placeholder="高血压,糖尿病"><div class="km-hint">多个标签用逗号分隔</div></div>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" data-dismiss="modal">
-                <i class="fas fa-times me-2"></i>取消
-            </button>
-            <button class="btn btn-primary" id="saveDocumentBtn">
-                <i class="fas fa-save me-2"></i>保存文档
-            </button>
-        </div>
+        <div class="modal-footer"><button class="btn btn-outline" id="cancelDocBtn">取消</button><button class="btn btn-primary" id="saveDocumentBtn"><i class="fas fa-save"></i> 保存文档</button></div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script src="{{ url_for('static', filename='js/knowledge.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let socket = null;
+    let currentDocType = 'file';
+    let selectedFile = null;
+
+    // === 统计信息 ===
+    function fmtSize(b) { if(!b||b===0) return '-'; if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+
+    function loadStats() {
+        fetch('/admin/knowledge/stats').then(r=>r.json()).then(d => {
+            document.getElementById('statTotalDocs').textContent = d.total_docs||0;
+            document.getElementById('statVectorized').textContent = d.vectorized_count||0;
+            document.getElementById('statTagCount').textContent = (d.tags||[]).length;
+            document.getElementById('statFileSize').textContent = '文档: '+fmtSize(d.total_file_size);
+            document.getElementById('statVectorSize').textContent = '向量: '+fmtSize(d.total_vector_size);
+            const ta = document.getElementById('tagsArea');
+            ta.innerHTML = (d.tags&&d.tags.length) ? d.tags.map(t=>`<span class="tag-pill">${t}</span>`).join('') : '<span style="color:rgba(255,255,255,.4);font-size:13px;">暂无标签</span>';
+        }).catch(e=>console.error(e));
+    }
+
+    // === 文档列表 ===
+    function loadDocs(page) {
+        page=page||1;
+        const tb=document.getElementById('docsTableBody');
+        tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(255,255,255,.4);"><i class="fas fa-spinner fa-spin"></i></td></tr>';
+        fetch('/admin/knowledge/documents?page='+page).then(r=>r.json()).then(data=>{
+            const docs=data.items||[];
+            document.getElementById('docsCount').textContent = `共 ${data.total||0} 个文档`;
+            if(!docs.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:rgba(255,255,255,.35);"><i class="fas fa-file-alt" style="font-size:28px;display:block;margin-bottom:8px;"></i>暂无文档</td></tr>'; return; }
+            tb.innerHTML = docs.map(d => {
+                const tags = (d.tags||[]).map(t=>`<span class="tag-pill">${t}</span>`).join('')||'<span style="color:rgba(255,255,255,.3);">-</span>';
+                const st = d.is_vectorized ? '<span class="vectorized-badge">✓ 已向量化</span>' : '<span class="not-vectorized-badge">未向量化</span>';
+                return `<tr>
+                    <td><i class="fas fa-${d.type==='url'?'link':'file-alt'}" style="color:#48dbfb;margin-right:8px;"></i>${d.name}</td>
+                    <td>${d.type==='file'?'文件':'URL'}</td>
+                    <td style="font-size:12px;">${fmtSize(d.file_size)}</td>
+                    <td><div style="display:flex;flex-wrap:wrap;gap:4px;">${tags}</div></td>
+                    <td>${st}</td>
+                    <td style="font-size:12px;">${(d.created_at||'').substring(0,10)}</td>
+                    <td><div class="action-btns">
+                        <button class="btn-vec" onclick="vectorizeDoc(${d.id},'${d.name}')" title="向量化"><i class="fas fa-brain"></i></button>
+                        <button class="btn-del" onclick="deleteDoc(${d.id},'${d.name}')" title="删除"><i class="fas fa-trash"></i></button>
+                    </div></td>
+                </tr>`;
+            }).join('');
+            const pg=document.getElementById('docsPagination');
+            if(data.pages>1){ let h=''; for(let i=1;i<=data.pages;i++) h+=`<button onclick="window._loadDocs(${i})" class="page-btn ${i===data.current_page?'active':''}">${i}</button>`; pg.innerHTML=h; } else pg.innerHTML='';
+        }).catch(e=>{console.error(e); tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:#ff6b6b;padding:30px;">加载失败</td></tr>';});
+    }
+    window._loadDocs = loadDocs;
+
+    // === WebSocket 向量化 ===
+    function initSocket() {
+        if(socket) return;
+        socket = io();
+        socket.on('vectorization_update', d => appendOutput(d.message));
+        socket.on('vectorization_complete', d => { appendOutput('<div class="success-message">✅ 向量化完成!</div>'); loadStats(); loadDocs(1); });
+        socket.on('vectorization_error', d => appendOutput('<div class="error-message">❌ '+d.message+'</div>'));
+    }
+
+    function appendOutput(html) {
+        const out=document.getElementById('vectorOutput');
+        if(out.querySelector('.vec-empty')) out.innerHTML='';
+        out.insertAdjacentHTML('beforeend', html);
+        out.scrollTop=out.scrollHeight;
+    }
+
+    window.vectorizeDoc = function(id, name) {
+        Swal.fire({ title:'向量化文档', text:`确认向量化 "${name}"？`, icon:'question', showCancelButton:true, confirmButtonText:'开始', cancelButtonText:'取消', background:'rgba(26,26,46,.95)', color:'#e2e2e2', confirmButtonColor:'#48dbfb' }).then(r=>{
+            if(r.isConfirmed){ initSocket(); appendOutput(`<div class="info-message">📄 开始处理: ${name}</div>`); socket.emit('start_vectorization',{doc_id:id}); }
+        });
+    };
+
+    window.deleteDoc = function(id, name) {
+        Swal.fire({ title:'删除文档', text:`确认删除 "${name}"？`, icon:'warning', showCancelButton:true, confirmButtonText:'删除', cancelButtonText:'取消', confirmButtonColor:'#dc3545', background:'rgba(26,26,46,.95)', color:'#e2e2e2' }).then(r=>{
+            if(r.isConfirmed){ fetch(`/admin/knowledge/documents/${id}`,{method:'DELETE'}).then(r=>r.json()).then(d=>{ if(d.success){ Swal.fire({icon:'success',title:'已删除',timer:1500,background:'rgba(26,26,46,.95)',color:'#e2e2e2',confirmButtonColor:'#48dbfb'}); loadStats(); loadDocs(1); }}).catch(e=>Swal.fire({icon:'error',title:'失败',text:e.message,background:'rgba(26,26,46,.95)',color:'#e2e2e2'})); }
+        });
+    };
+
+    // === 新增文档模态框 ===
+    const modal = document.getElementById('documentModal');
+    document.getElementById('addDocumentBtn').addEventListener('click', () => { modal.style.display='block'; resetForm(); });
+    document.getElementById('closeDocModal').addEventListener('click', () => modal.style.display='none');
+    document.getElementById('cancelDocBtn').addEventListener('click', () => modal.style.display='none');
+    window.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; });
+
+    document.querySelectorAll('.type-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'));
+            this.classList.add('active');
+            currentDocType = this.dataset.type;
+            document.getElementById('fileSection').style.display = currentDocType==='file'?'block':'none';
+            document.getElementById('urlSection').style.display = currentDocType==='url'?'block':'none';
+        });
+    });
+
+    // File upload
+    const dropArea=document.getElementById('dropArea'), fileInput=document.getElementById('fileInput');
+    document.getElementById('selectFileBtn').addEventListener('click', ()=>fileInput.click());
+    dropArea.addEventListener('click', e=>{ if(!e.target.closest('button')) fileInput.click(); });
+    dropArea.addEventListener('dragover', e=>{e.preventDefault();dropArea.style.borderColor='#48dbfb';});
+    dropArea.addEventListener('dragleave', ()=>{dropArea.style.borderColor='rgba(72,219,251,.3)';});
+    dropArea.addEventListener('drop', e=>{e.preventDefault();dropArea.style.borderColor='rgba(72,219,251,.3)'; if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);});
+    fileInput.addEventListener('change', ()=>{ if(fileInput.files.length) handleFile(fileInput.files[0]); });
+
+    function handleFile(file) {
+        selectedFile=file;
+        document.getElementById('fileName').textContent=file.name;
+        document.getElementById('fileSize').textContent=fmtSize(file.size);
+        document.getElementById('fileInfo').style.display='block';
+        dropArea.style.display='none';
+        if(!document.getElementById('fileDocumentName').value) document.getElementById('fileDocumentName').value=file.name.replace(/\.[^.]+$/,'');
+    }
+    document.getElementById('removeFile').addEventListener('click', ()=>{
+        selectedFile=null; fileInput.value='';
+        document.getElementById('fileInfo').style.display='none'; dropArea.style.display='block';
+    });
+
+    function resetForm() {
+        selectedFile=null; fileInput.value=''; currentDocType='file';
+        document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelector('.type-tab[data-type="file"]').classList.add('active');
+        document.getElementById('fileSection').style.display='block';
+        document.getElementById('urlSection').style.display='none';
+        document.getElementById('fileInfo').style.display='none';
+        document.getElementById('dropArea').style.display='block';
+        ['fileDocumentName','fileTags','urlDocumentName','urlLink','urlTags'].forEach(id=>document.getElementById(id).value='');
+    }
+
+    // Save
+    document.getElementById('saveDocumentBtn').addEventListener('click', () => {
+        initSocket();
+        const fd = new FormData();
+        fd.append('type', currentDocType);
+        fd.append('socket_id', socket?.id||'');
+        if(currentDocType==='file'){
+            if(!selectedFile){Swal.fire({icon:'warning',title:'请选择文件',background:'rgba(26,26,46,.95)',color:'#e2e2e2'});return;}
+            const name=document.getElementById('fileDocumentName').value.trim();
+            if(!name){Swal.fire({icon:'warning',title:'请输入文档名称',background:'rgba(26,26,46,.95)',color:'#e2e2e2'});return;}
+            fd.append('file',selectedFile);fd.append('name',name);fd.append('tags',document.getElementById('fileTags').value.trim());
+        } else {
+            const name=document.getElementById('urlDocumentName').value.trim();
+            const url=document.getElementById('urlLink').value.trim();
+            if(!name||!url){Swal.fire({icon:'warning',title:'请填写名称和URL',background:'rgba(26,26,46,.95)',color:'#e2e2e2'});return;}
+            fd.append('name',name);fd.append('url',url);fd.append('tags',document.getElementById('urlTags').value.trim());
+        }
+        const btn=document.getElementById('saveDocumentBtn');
+        btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        fetch('/admin/knowledge/documents',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+            btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> 保存文档';
+            if(d.success||d.document_id){ modal.style.display='none'; Swal.fire({icon:'success',title:'文档添加成功',timer:1500,background:'rgba(26,26,46,.95)',color:'#e2e2e2',confirmButtonColor:'#48dbfb'}); loadStats(); loadDocs(1); }
+            else { Swal.fire({icon:'error',title:'添加失败',text:d.error,background:'rgba(26,26,46,.95)',color:'#e2e2e2'}); }
+        }).catch(e=>{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> 保存文档';Swal.fire({icon:'error',title:'网络错误',text:e.message,background:'rgba(26,26,46,.95)',color:'#e2e2e2'});});
+    });
+
+    document.getElementById('clearOutput').addEventListener('click', ()=>{
+        document.getElementById('vectorOutput').innerHTML='<div class="vec-empty"><i class="fas fa-info-circle"></i><p>选择文档点击向量化按钮开始处理</p></div>';
+    });
+
+    // Init
+    loadStats();
+    loadDocs(1);
+    document.getElementById('refreshDocsBtn').addEventListener('click', ()=>{loadStats();loadDocs(1);});
+});
+</script>
 {% endblock %}

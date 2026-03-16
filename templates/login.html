@@ -6,302 +6,101 @@
     <title>健康知识平台 - 登录</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            position: relative;
-            overflow: hidden;
-            color: #333;
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            background: #0a0a1a; position: relative; overflow: hidden;
+            font-family: 'Noto Sans SC', sans-serif; color: #e0f0ff;
         }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        body::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,245,255,.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,245,255,.03) 1px, transparent 1px);
+            background-size: 50px 50px; animation: gridMove 20s linear infinite;
         }
-
-        #particles-js {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            z-index: 1;
+        @keyframes gridMove { 0%{transform:translate(0,0)} 100%{transform:translate(50px,50px)} }
+        body::after {
+            content: ''; position: absolute; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0,245,255,.08) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;
         }
-
-        .login-container {
-            position: relative;
-            z-index: 2;
-            width: 100%;
-            max-width: 440px;
-            padding: 20px;
-        }
-
+        #particles-js { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; }
+        .login-container { position: relative; z-index: 2; width: 100%; max-width: 440px; padding: 20px; }
         .login-box {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 20px;
-            padding: 40px 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            animation: fadeIn 1s ease-out;
+            background: rgba(255,255,255,.05); backdrop-filter: blur(20px);
+            border-radius: 22px; padding: 45px 35px; box-shadow: 0 15px 50px rgba(0,0,0,.4);
+            border: 1px solid rgba(0,245,255,.12); animation: fadeIn .8s ease-out;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(25px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        .login-header { text-align: center; margin-bottom: 35px; }
+        .login-header .icon-wrap {
+            width: 80px; height: 80px; margin: 0 auto 18px;
+            background: linear-gradient(135deg, rgba(0,245,255,.15), rgba(255,0,255,.1));
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(0,245,255,.2);
         }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-            transform: translateZ(30px);
+        .login-header .icon-wrap i {
+            font-size: 36px; background: linear-gradient(135deg, #00f5ff, #ff00ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        .login-header i {
-            font-size: 50px;
-            margin-bottom: 15px;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
         .login-header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px;
+            background: linear-gradient(135deg, #00f5ff, #e0f0ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-group label {
-            font-weight: 500;
-            color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            font-size: 16px;
-        }
-
-        .input-with-icon {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-with-icon i {
-            position: absolute;
-            left: 15px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 18px;
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-
+        .login-header p { color: #8a9ba8; font-size: 14px; }
+        .login-form { display: flex; flex-direction: column; gap: 22px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-weight: 500; font-size: 14px; color: rgba(0,245,255,.8); }
+        .input-with-icon { position: relative; }
+        .input-with-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: rgba(0,245,255,.5); font-size: 16px; transition: .3s; z-index: 2; }
         .input-with-icon input {
-            width: 100%;
-            padding: 15px 15px 15px 50px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            outline: none;
+            width: 100%; padding: 15px 16px 15px 48px; border: 1px solid rgba(0,245,255,.15);
+            border-radius: 12px; background: rgba(255,255,255,.04); color: #e0f0ff;
+            font-size: 15px; font-family: inherit; transition: .3s; outline: none;
         }
-
-        .input-with-icon input::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .input-with-icon input:focus {
-            background: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
-        }
-
-        .input-with-icon input:focus + i {
-            color: #fff;
-            transform: scale(1.2);
-        }
-
+        .input-with-icon input::placeholder { color: rgba(255,255,255,.25); }
+        .input-with-icon input:focus { border-color: #00f5ff; background: rgba(0,245,255,.04); box-shadow: 0 0 0 3px rgba(0,245,255,.1); }
         .login-btn {
-            margin-top: 15px;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
-            position: relative;
-            overflow: hidden;
+            margin-top: 8px; padding: 16px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, #00f5ff, #ff00ff); color: #000;
+            font-size: 16px; font-weight: 700; font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px; cursor: pointer; transition: .4s; position: relative; overflow: hidden;
         }
-
-        .login-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(37, 117, 252, 0.6);
-        }
-
-        .login-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 3px 10px rgba(37, 117, 252, 0.4);
-        }
-
-        .login-btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
-            transform: translateY(100%);
-            transition: transform 0.4s ease;
-        }
-
-        .login-btn:hover::after {
-            transform: translateY(0);
-        }
-
-        .login-footer {
-            margin-top: 25px;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .login-footer p {
-            margin: 10px 0;
-        }
-
-        .login-footer a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .login-footer a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: #fff;
-            transition: width 0.3s ease;
-        }
-
-        .login-footer a:hover::after {
-            width: 100%;
-        }
-
-        .flash-messages {
-            margin-bottom: 20px;
-        }
-
-        .flash {
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: 500;
-            text-align: center;
-            animation: slideIn 0.5s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .flash.success {
-            background: rgba(40, 167, 69, 0.2);
-            color: #28a745;
-            border: 1px solid rgba(40, 167, 69, 0.3);
-        }
-
-        .flash.error {
-            background: rgba(220, 53, 69, 0.2);
-            color: #dc3545;
-            border: 1px solid rgba(220, 53, 69, 0.3);
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 15px;
-            }
-            
-            .login-box {
-                padding: 30px 20px;
-            }
-            
-            .login-header h1 {
-                font-size: 24px;
-            }
-            
-            .input-with-icon input {
-                padding: 12px 12px 12px 45px;
-            }
-        }
+        .login-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,245,255,.35); }
+        .login-btn::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent); transition:left .6s; }
+        .login-btn:hover::after { left: 100%; }
+        .login-footer { margin-top: 28px; text-align: center; }
+        .login-footer p { margin: 8px 0; color: #8a9ba8; font-size: 14px; }
+        .login-footer a { color: rgba(0,245,255,.7); text-decoration: none; font-weight: 500; transition: .3s; }
+        .login-footer a:hover { color: #00f5ff; }
+        .flash-messages { margin-bottom: 18px; }
+        .flash { padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-weight: 500; text-align: center; font-size: 14px; animation: slideIn .4s ease; }
+        @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        .flash.success { background: rgba(46,204,113,.12); color: #2ecc71; border: 1px solid rgba(46,204,113,.25); }
+        .flash.error { background: rgba(255,107,107,.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,.25); }
+        @media (max-width: 480px) { .login-container{padding:15px} .login-box{padding:30px 22px} .login-header h1{font-size:20px} }
     </style>
 </head>
 <body>
     <div id="particles-js"></div>
-    
     <div class="login-container">
         <div class="login-box">
             <div class="login-header">
-                <i class="fas fa-book-medical"></i>
-                <h1>健康知识平台</h1>
+                <div class="icon-wrap"><i class="fas fa-brain"></i></div>
+                <h1>AI 健康助手</h1>
+                <p>智能健康知识推送平台</p>
             </div>
-
             <form class="login-form" method="POST" action="{{ url_for('login') }}">
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        <div class="flash-messages">
-                            {% for category, message in messages %}
-                                <div class="flash {{ category }}">{{ message }}</div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% endwith %}
-
                 <div class="form-group">
                     <label for="phone">手机号</label>
                     <div class="input-with-icon">
@@ -309,7 +108,6 @@
                         <input type="text" id="phone" name="phone" placeholder="请输入您的手机号" required>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label for="password">密码</label>
                     <div class="input-with-icon">
@@ -317,86 +115,25 @@
                         <input type="password" id="password" name="password" placeholder="请输入密码" required>
                     </div>
                 </div>
-
-                <button type="submit" class="login-btn">登录系统</button>
-
+                <button type="submit" class="login-btn">登 录</button>
                 <div class="login-footer">
                     <p>还没有账号？<a href="{{ url_for('register') }}">立即注册</a></p>
-                    <p><a href="#">忘记密码？</a></p>
                 </div>
             </form>
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        // 初始化粒子背景
-        document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof particlesJS !== 'undefined') {
             particlesJS('particles-js', {
-                particles: {
-                    number: { value: 80, density: { enable: true, value_area: 800 } },
-                    color: { value: "#ffffff" },
-                    shape: { type: "circle" },
-                    opacity: {
-                        value: 0.5,
-                        random: true,
-                        anim: { enable: true, speed: 1, opacity_min: 0.1, sync: false }
-                    },
-                    size: {
-                        value: 3,
-                        random: true,
-                        anim: { enable: true, speed: 2, size_min: 0.1, sync: false }
-                    },
-                    line_linked: {
-                        enable: true,
-                        distance: 150,
-                        color: "#ffffff",
-                        opacity: 0.4,
-                        width: 1
-                    },
-                    move: {
-                        enable: true,
-                        speed: 1,
-                        direction: "none",
-                        random: true,
-                        straight: false,
-                        out_mode: "out",
-                        bounce: false,
-                        attract: { enable: false, rotateX: 600, rotateY: 1200 }
-                    }
-                },
-                interactivity: {
-                    detect_on: "canvas",
-                    events: {
-                        onhover: { enable: true, mode: "grab" },
-                        onclick: { enable: true, mode: "push" },
-                        resize: true
-                    },
-                    modes: {
-                        grab: { distance: 140, line_linked: { opacity: 1 } },
-                        push: { particles_nb: 4 }
-                    }
-                },
+                particles: { number:{value:60,density:{enable:true,value_area:900}}, color:{value:"#00f5ff"}, shape:{type:"circle"}, opacity:{value:0.3,random:true}, size:{value:2,random:true}, line_linked:{enable:true,distance:150,color:"#00f5ff",opacity:0.15,width:1}, move:{enable:true,speed:1,direction:"none",random:true,out_mode:"out"} },
+                interactivity: { events:{onhover:{enable:true,mode:"grab"},onclick:{enable:true,mode:"push"}}, modes:{grab:{distance:140,line_linked:{opacity:0.5}},push:{particles_nb:3}} },
                 retina_detect: true
             });
-
-            // 手机号输入验证
-            const phoneInput = document.getElementById('phone');
-            phoneInput.addEventListener('input', function() {
-                this.value = this.value.replace(/\D/g, '').substring(0, 11);
-            });
-
-            // 添加输入框聚焦效果
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.addEventListener('focus', () => {
-                    input.parentElement.classList.add('focused');
-                });
-                input.addEventListener('blur', () => {
-                    input.parentElement.classList.remove('focused');
-                });
-            });
-        });
+        }
+        document.getElementById('phone').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').substring(0, 11); });
+    });
     </script>
 </body>
 </html>
