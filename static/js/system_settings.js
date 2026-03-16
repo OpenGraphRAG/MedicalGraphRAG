@@ -133,8 +133,8 @@ function saveSettings() {
     .then(result => {
         if (result.success) {
             Swal.fire({
-                title: '成功',
-                text: '系统配置已保存',
+                title: '配置已保存',
+                text: result.message || '系统配置已保存并即时生效，无需重启服务',
                 icon: 'success',
                 background: 'rgba(26, 26, 46, 0.9)',
                 color: '#e2e2e2',

@@ -152,21 +152,24 @@ function handleTabClick(tabButton) {
 function initSearch() {
     const searchInput = document.getElementById('searchPatients');
     if (searchInput) {
+        let searchTimer = null;
         searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('.patients-table tbody tr');
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    row.style.display = '';
-                    row.classList.add('highlight');
-                    setTimeout(() => row.classList.remove('highlight'), 1000);
+            clearTimeout(searchTimer);
+            const searchTerm = this.value.trim();
+            searchTimer = setTimeout(() => {
+                if (searchTerm.length === 0) {
+                    window.location.href = '/admin/dashboard';
                 } else {
-                    row.style.display = 'none';
+                    window.location.href = '/admin/dashboard?search=' + encodeURIComponent(searchTerm);
                 }
-            });
+            }, 600);
         });
+        // 保持搜索框内容
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSearch = urlParams.get('search');
+        if (currentSearch) {
+            searchInput.value = currentSearch;
+        }
     }
 }
 
@@ -625,17 +628,18 @@ function openDetailModal(userId) {
         fetch(`/admin/patient/${userId}/metrics`).then(r => {
             if (!r.ok) throw new Error('获取健康指标失败');
             return r.json();
-        })
+        }),
+        fetch(`/api/image_analyses?patient_id=${userId}`).then(r => r.json()).catch(() => [])
     ])
-    .then(([patient, metrics]) => {
+    .then(([patient, metrics, analyses]) => {
         hideLoading();
 
         populateDetailModal(patient, metrics);
+        renderImageAnalyses(analyses);
 
         const modal = document.getElementById('userDetailModal');
         if (modal) {
             modal.style.display = 'block';
-            console.log('详情模态框显示成功');
         }
     })
     .catch(err => {
@@ -643,6 +647,32 @@ function openDetailModal(userId) {
         console.error('打开详情模态框失败:', err);
         showError('获取用户信息失败: ' + err.message);
     });
+}
+
+function renderImageAnalyses(analyses) {
+    const container = document.getElementById('detail-image-analyses');
+    const noMsg = document.getElementById('no-analyses-message');
+    if (!container) return;
+
+    if (!analyses || analyses.length === 0) {
+        if (noMsg) noMsg.style.display = 'flex';
+        return;
+    }
+    if (noMsg) noMsg.style.display = 'none';
+
+    let html = '<div style="max-height:300px;overflow-y:auto;">';
+    analyses.forEach(a => {
+        const saved = a.is_saved_to_profile ? '<span style="color:#2ecc71;font-size:11px;"><i class="fas fa-check-circle"></i> 已同步</span>' : '<span style="color:#f39c12;font-size:11px;">未同步</span>';
+        html += `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="color:#48dbfb;font-weight:600;font-size:13px;"><i class="fas fa-x-ray"></i> ${a.image_type||'通用'}</span>
+                <span style="font-size:11px;color:rgba(255,255,255,.4);">${(a.created_at||'').substring(0,16)} ${saved}</span>
+            </div>
+            <div style="color:rgba(255,255,255,.8);font-size:12px;line-height:1.6;max-height:120px;overflow-y:auto;white-space:pre-wrap;">${(a.analysis_result||'').substring(0,500)}${(a.analysis_result||'').length>500?'...':''}</div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 function populateDetailModal(patient, metrics) {
@@ -842,9 +872,13 @@ function addNewUser() {
     })
     .then(result => {
         if (result.success) {
-            showSuccess('用户创建成功');
+            if (result.merged) {
+                showSuccess('该手机号用户已存在，已自动合并健康信息到该用户');
+            } else {
+                showSuccess('用户创建成功（默认密码: 123456）');
+            }
             closeModals();
-            setTimeout(() => location.reload(), 1000);
+            setTimeout(() => location.reload(), 1500);
         } else {
             throw new Error(result.error || '创建失败');
         }

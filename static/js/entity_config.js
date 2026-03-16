@@ -1,22 +1,39 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('实体关系属性配置脚本初始化');
     initEntityConfig();
+    // 使用事件委托处理编辑按钮点击
+    document.addEventListener('click', function(event) {
+        const editBtn = event.target.closest('.edit-btn');
+        if (editBtn && editBtn.dataset.elementType && editBtn.dataset.elementId) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const elementType = editBtn.dataset.elementType;
+            const elementId = editBtn.dataset.elementId;
+
+            console.log(`点击编辑按钮: ${elementType} - ${elementId}`);
+            editProperties(elementType, elementId, editBtn);
+        }
+    });
 });
 
 let currentPage = 1;
-let perPage = 3;
+let perPage = 5;
 let searchTerm = '';
 let propertiesToEdit = [];
 
 function initEntityConfig() {
     console.log('初始化实体关系属性配置功能');
-    
+
     // 绑定事件
     bindEvents();
-    
-    // 加载数据
-    loadTriples();
+
+    // 首次加载：只加载统计信息
     loadStats();
+
+    // 首次加载第一页数据
+    currentPage = 1;
+    loadTriples();
 }
 
 function bindEvents() {
@@ -26,12 +43,16 @@ function bindEvents() {
         loadTriples();
     });
 
-    // 搜索框
+    // 搜索框 - 带防抖
     const searchInput = document.getElementById('searchTriples');
+    let searchTimer = null;
     searchInput?.addEventListener('input', function() {
+        clearTimeout(searchTimer);
         searchTerm = this.value;
-        currentPage = 1;
-        loadTriples();
+        searchTimer = setTimeout(() => {
+            currentPage = 1;
+            loadTriples();
+        }, 500);
     });
 
     // 每页数量选择
@@ -60,14 +81,23 @@ function bindEvents() {
     });
 }
 
+// 使用AbortController取消之前未完成的请求
+let currentTriplesController = null;
+
 function loadTriples() {
     console.log(`加载第${currentPage}页三元组，每页${perPage}条`);
-    
+
+    // 取消之前的请求
+    if (currentTriplesController) {
+        currentTriplesController.abort();
+    }
+    currentTriplesController = new AbortController();
+
     showLoading('正在加载三元组数据...');
-    
+
     const url = `/api/entity_config/triples?page=${currentPage}&per_page=${perPage}&search=${encodeURIComponent(searchTerm)}`;
-    
-    fetch(url)
+
+    fetch(url, { signal: currentTriplesController.signal })
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应异常: ' + response.status);
@@ -76,37 +106,62 @@ function loadTriples() {
         })
         .then(result => {
             hideLoading();
-            
+            currentTriplesController = null;
+
+            let triples = [];
+            let pagination = {};
+
             if (result.success) {
-                renderTriples(result.triples);
-                renderPagination(result.pagination);
+                if (result.data && result.data.triples) {
+                    triples = result.data.triples;
+                    pagination = result.data.pagination || {};
+                } else if (result.triples) {
+                    triples = result.triples;
+                    pagination = result.pagination || {};
+                }
+
+                renderTriples(triples);
+                renderPagination(pagination);
+
+                document.getElementById('currentCount').textContent = triples.length;
+                if (pagination.total_items) {
+                    document.getElementById('totalCount').textContent = pagination.total_items;
+                }
             } else {
                 throw new Error(result.error || '加载失败');
             }
         })
         .catch(error => {
+            if (error.name === 'AbortError') {
+                console.log('请求已取消');
+                return;
+            }
             hideLoading();
+            currentTriplesController = null;
             console.error('加载三元组失败:', error);
             showError('加载数据失败: ' + error.message);
         });
 }
 
 function loadStats() {
-    // 简单的统计信息（可以从三元组数据计算）
-    fetch('/api/entity_config/triples?page=1&per_page=1')
+    // 使用专用统计接口获取真实的实体和关系总数
+    fetch('/api/entity_config/stats')
         .then(response => response.json())
         .then(result => {
-            if (result.success) {
-                document.getElementById('totalEntities').textContent = result.pagination.total_items * 2;
-                document.getElementById('totalRelations').textContent = result.pagination.total_items;
+            if (result.success && result.data) {
+                document.getElementById('totalEntities').textContent = result.data.entities || 0;
+                document.getElementById('totalRelations').textContent = result.data.relationships || 0;
             }
+        })
+        .catch(err => {
+            console.error('获取统计信息失败:', err);
         });
 }
 
 function renderTriples(triples) {
     const container = document.getElementById('triplesContainer');
     container.innerHTML = '';
-    
+
     if (triples.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
@@ -115,46 +170,53 @@ function renderTriples(triples) {
             </div>`;
         return;
     }
-    
+
+    // 添加三元组计数
+    document.getElementById('currentCount').textContent = triples.length;
+
     triples.forEach(triple => {
         const card = createTripleCard(triple);
         container.appendChild(card);
     });
-    
-    // 更新计数
-    document.getElementById('currentCount').textContent = triples.length;
-    document.getElementById('totalCount').textContent = document.getElementById('totalCount').textContent || '0';
 }
 
 function createTripleCard(triple) {
     const card = document.createElement('div');
     card.className = 'triple-card';
-    
+
+    // 计算属性数量
     const headPropsCount = Object.keys(triple.head.properties || {}).length;
     const tailPropsCount = Object.keys(triple.tail.properties || {}).length;
     const relPropsCount = Object.keys(triple.relation.properties || {}).length;
-    
+
+    // 创建唯一ID，避免特殊字符问题
+    const headId = escapeHtml(triple.head.tid || '');
+    const tailId = escapeHtml(triple.tail.tid || '');
+    const relId = escapeHtml(triple.relation.rid || '');
+
     card.innerHTML = `
         <div class="triple-header">
             <div class="triple-title">
-                <span class="entity-badge head">${triple.head.type}</span>
-                <span class="relation-badge">${triple.relation.type}</span>
-                <span class="entity-badge tail">${triple.tail.type}</span>
+                <span class="entity-badge head">${escapeHtml(triple.head.type)}</span>
+                <span class="relation-badge">${escapeHtml(triple.relation.type)}</span>
+                <span class="entity-badge tail">${escapeHtml(triple.tail.type)}</span>
             </div>
-            <div class="triple-id">ID: ${triple.head.tid} → ${triple.relation.rid} → ${triple.tail.tid}</div>
+            <div class="triple-id">
+                ID: ${escapeHtml(triple.head.tid)} → ${escapeHtml(triple.relation.rid)} → ${escapeHtml(triple.tail.tid)}
+            </div>
         </div>
         
         <div class="triple-body">
             <div class="entity-section">
                 <div class="section-header">
                     <div class="section-title">
-                        <i class="fas fa-circle"></i> 头节点: ${triple.head.name}
+                        <i class="fas fa-circle"></i> 头节点: ${escapeHtml(triple.head.name)}
                     </div>
-                    <button class="edit-btn" onclick="editProperties('head', ${triple.head.tid})">
+                    <button class="edit-btn" data-element-type="head" data-element-id="${headId}">
                         <i class="fas fa-edit"></i> 编辑
                     </button>
                 </div>
-                <div class="properties-list" id="head-${triple.head.tid}">
+                <div class="properties-list" id="head-${headId}">
                     ${renderProperties(triple.head.properties, headPropsCount)}
                 </div>
             </div>
@@ -164,11 +226,11 @@ function createTripleCard(triple) {
                     <div class="section-title">
                         <i class="fas fa-arrows-alt-h"></i> 关系属性
                     </div>
-                    <button class="edit-btn" onclick="editProperties('relation', ${triple.relation.rid})">
+                    <button class="edit-btn" data-element-type="relation" data-element-id="${relId}">
                         <i class="fas fa-edit"></i> 编辑
                     </button>
                 </div>
-                <div class="properties-list" id="relation-${triple.relation.rid}">
+                <div class="properties-list" id="relation-${relId}">
                     ${renderProperties(triple.relation.properties, relPropsCount)}
                 </div>
             </div>
@@ -176,65 +238,110 @@ function createTripleCard(triple) {
             <div class="entity-section">
                 <div class="section-header">
                     <div class="section-title">
-                        <i class="fas fa-circle"></i> 尾节点: ${triple.tail.name}
+                        <i class="fas fa-circle"></i> 尾节点: ${escapeHtml(triple.tail.name)}
                     </div>
-                    <button class="edit-btn" onclick="editProperties('tail', ${triple.tail.tid})">
+                    <button class="edit-btn" data-element-type="tail" data-element-id="${tailId}">
                         <i class="fas fa-edit"></i> 编辑
                     </button>
                 </div>
-                <div class="properties-list" id="tail-${triple.tail.tid}">
+                <div class="properties-list" id="tail-${tailId}">
                     ${renderProperties(triple.tail.properties, tailPropsCount)}
                 </div>
             </div>
         </div>
     `;
-    
+
     return card;
 }
 
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
 function renderProperties(properties, count) {
-    if (count === 0) {
+    if (count === 0 || !properties || Object.keys(properties).length === 0) {
         return '<div class="no-properties">暂无属性</div>';
     }
-    
-    const propsHtml = Object.entries(properties).map(([key, value]) => `
-        <div class="property-item">
-            <span class="property-key">${key}:</span>
-            <span class="property-value" title="${value}">${value}</span>
-        </div>
-    `).join('');
-    
+
+    let propsHtml = '';
+    Object.entries(properties).forEach(([key, value]) => {
+        // 如果value是对象或数组，转换为JSON字符串
+        if (typeof value === 'object' && value !== null) {
+            value = JSON.stringify(value, null, 2);
+        }
+
+        // 截断过长的值
+        const displayValue = String(value).length > 50
+            ? String(value).substring(0, 50) + '...'
+            : String(value);
+
+        propsHtml += `
+            <div class="property-item">
+                <span class="property-key">${escapeHtml(key)}:</span>
+                <span class="property-value" title="${escapeHtml(value)}">${escapeHtml(displayValue)}</span>
+            </div>
+        `;
+    });
+
     return propsHtml;
 }
 
-function editProperties(elementType, elementId) {
-    console.log(`编辑${elementType}属性:`, elementId);
-    
+function editProperties(elementType, elementId, buttonElement) {
+    console.log(`编辑${elementType}属性:`, elementId, typeof elementId);
+
+    // 确保elementId是字符串（处理可能的数据类型问题）
+    if (typeof elementId !== 'string') {
+        elementId = String(elementId);
+    }
+
+    // 清理elementId（移除可能的引号）
+    if (elementId.startsWith('"') && elementId.endsWith('"')) {
+        elementId = elementId.slice(1, -1);
+    }
+    if (elementId.startsWith("'") && elementId.endsWith("'")) {
+        elementId = elementId.slice(1, -1);
+    }
+
     // 获取当前属性
     const propsContainer = document.getElementById(`${elementType}-${elementId}`);
+    if (!propsContainer) {
+        console.error(`找不到属性容器: ${elementType}-${elementId}`);
+        return;
+    }
+
     const propertyItems = propsContainer.querySelectorAll('.property-item');
-    
+
     propertiesToEdit = [];
-    
+
     if (propertyItems.length === 0) {
         // 如果没有属性，添加一个空属性
         propertiesToEdit.push({ key: '', value: '' });
     } else {
         propertyItems.forEach(item => {
-            const key = item.querySelector('.property-key').textContent.replace(':', '');
-            const value = item.querySelector('.property-value').textContent;
-            propertiesToEdit.push({ key, value });
+            const keyElem = item.querySelector('.property-key');
+            const valueElem = item.querySelector('.property-value');
+
+            if (keyElem && valueElem) {
+                // 移除冒号并去除空格
+                const key = keyElem.textContent.replace(':', '').trim();
+                const value = valueElem.textContent.trim();
+                propertiesToEdit.push({ key, value });
+            }
         });
     }
-    
+
     // 渲染属性编辑表单
     renderPropertiesForm();
-    
+
     // 显示模态框
     const modal = document.getElementById('editPropertiesModal');
     document.getElementById('editModalTitle').textContent = `编辑${elementType === 'relation' ? '关系' : '实体'}属性`;
     modal.style.display = 'block';
-    
+
     // 保存编辑上下文
     modal.dataset.elementType = elementType;
     modal.dataset.elementId = elementId;
@@ -243,7 +350,7 @@ function editProperties(elementType, elementId) {
 function renderPropertiesForm() {
     const container = document.getElementById('propertiesContainer');
     container.innerHTML = '';
-    
+
     propertiesToEdit.forEach((prop, index) => {
         const group = document.createElement('div');
         group.className = 'property-input-group';
@@ -271,38 +378,50 @@ function removeProperty(index) {
 function saveProperties() {
     const modal = document.getElementById('editPropertiesModal');
     const elementType = modal.dataset.elementType;
-    const elementId = modal.dataset.elementId;
-    
+    let elementId = modal.dataset.elementId;
+
+    // 确保elementId是字符串
+    if (typeof elementId !== 'string') {
+        elementId = String(elementId);
+    }
+
     // 收集表单数据
     const keyInputs = document.querySelectorAll('.prop-key');
     const valueInputs = document.querySelectorAll('.prop-value');
-    
+
     const properties = {};
+    let hasValidProperties = false;
+
     for (let i = 0; i < keyInputs.length; i++) {
         const key = keyInputs[i].value.trim();
         const value = valueInputs[i].value.trim();
-        
+
         if (key) {
             properties[key] = value;
+            hasValidProperties = true;
         }
     }
-    
-    if (Object.keys(properties).length === 0) {
-        showWarning('请至少添加一个属性');
-        return;
+
+    // 如果没有属性，可以保存空对象来清除所有属性
+    if (!hasValidProperties) {
+        if (!confirm('没有设置任何属性，这将清除所有现有属性。确定继续吗？')) {
+            return;
+        }
     }
-    
+
     showLoading('正在保存属性...');
-    
+
+    // 构建URL
     let url = '';
-    let data = { properties: properties };
-    
+    const encodedElementId = encodeURIComponent(elementId);
+    const data = { properties: properties };
+
     if (elementType === 'relation') {
-        url = `/api/entity_config/relation/${elementId}`;
+        url = `/api/entity_config/relation/${encodedElementId}`;
     } else {
-        url = `/api/entity_config/node/${elementId}`;
+        url = `/api/entity_config/node/${encodedElementId}`;
     }
-    
+
     fetch(url, {
         method: 'PUT',
         headers: {
@@ -318,31 +437,82 @@ function saveProperties() {
     })
     .then(result => {
         hideLoading();
-        
-        if (result.success) {
-            showSuccess('属性更新成功');
+
+        // 检查是否保存成功
+        if (result.success || result.message) {
+            showSuccess('属性保存成功！');
             closeModals();
-            loadTriples(); // 刷新数据
+
+            // 立即更新显示，不需要重新加载整个页面
+            updatePropertyDisplay(elementType, elementId, properties);
         } else {
-            throw new Error(result.error || '更新失败');
+            throw new Error(result.error || '保存失败');
         }
     })
     .catch(error => {
         hideLoading();
-        console.error('保存属性失败:', error);
-        showError('保存属性失败: ' + error.message);
+        console.error('保存失败:', error);
+        showError('保存失败: ' + error.message);
     });
+}
+
+function updatePropertyDisplay(elementType, elementId, properties) {
+    const propsContainer = document.getElementById(`${elementType}-${elementId}`);
+    if (!propsContainer) {
+        console.warn(`找不到属性容器: ${elementType}-${elementId}`);
+        // 重新加载当前页数据
+        loadTriples();
+        return;
+    }
+
+    // 更新属性显示
+    const propsCount = Object.keys(properties).length;
+    propsContainer.innerHTML = renderProperties(properties, propsCount);
+
+    // 更新已修改计数
+    const modifiedCountElem = document.getElementById('modifiedCount');
+    if (modifiedCountElem) {
+        let currentCount = parseInt(modifiedCountElem.textContent) || 0;
+        modifiedCountElem.textContent = currentCount + 1;
+    }
+}
+
+// 新增函数：立即更新属性显示
+function updatePropertiesDisplay(elementType, elementId, properties) {
+    const propsContainer = document.getElementById(`${elementType}-${elementId}`);
+    if (!propsContainer) {
+        console.warn(`找不到属性容器: ${elementType}-${elementId}`);
+        return;
+    }
+
+    const propsCount = Object.keys(properties).length;
+    propsContainer.innerHTML = renderProperties(properties, propsCount);
+
+    // 更新统计信息
+    updateModifiedCount();
+}
+// 更新已修改计数
+function updateModifiedCount() {
+    const modifiedCountElem = document.getElementById('modifiedCount');
+    if (modifiedCountElem) {
+        const currentCount = parseInt(modifiedCountElem.textContent) || 0;
+        modifiedCountElem.textContent = currentCount + 1;
+    }
 }
 
 function renderPagination(pagination) {
     const container = document.getElementById('pagination');
     container.innerHTML = '';
-    
-    const { current_page, total_pages } = pagination;
-    
+
+    const { current_page, total_pages, total_items } = pagination;
+
     if (total_pages <= 1) return;
-    
-    // 上一页
+
+    // 计算显示的页面范围
+    let startPage = Math.max(1, current_page - 2);
+    let endPage = Math.min(total_pages, current_page + 2);
+
+    // 上一页按钮
     if (current_page > 1) {
         const prevBtn = document.createElement('button');
         prevBtn.className = 'page-btn';
@@ -350,23 +520,49 @@ function renderPagination(pagination) {
         prevBtn.onclick = () => changePage(current_page - 1);
         container.appendChild(prevBtn);
     }
-    
-    // 页码
-    for (let i = 1; i <= total_pages; i++) {
-        if (i === 1 || i === total_pages || (i >= current_page - 1 && i <= current_page + 1)) {
-            const btn = document.createElement('button');
-            btn.className = `page-btn ${i === current_page ? 'active' : ''}`;
-            btn.textContent = i;
-            btn.onclick = () => changePage(i);
-            container.appendChild(btn);
-        } else if (i === current_page - 2 || i === current_page + 2) {
-            const span = document.createElement('span');
-            span.textContent = '...';
-            container.appendChild(span);
+
+    // 第一页
+    if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.className = 'page-btn';
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => changePage(1);
+        container.appendChild(firstBtn);
+
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'page-ellipsis';
+            container.appendChild(ellipsis);
         }
     }
-    
-    // 下一页
+
+    // 中间页面
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${i === current_page ? 'active' : ''}`;
+        btn.textContent = i;
+        btn.onclick = () => changePage(i);
+        container.appendChild(btn);
+    }
+
+    // 最后一页
+    if (endPage < total_pages) {
+        if (endPage < total_pages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'page-ellipsis';
+            container.appendChild(ellipsis);
+        }
+
+        const lastBtn = document.createElement('button');
+        lastBtn.className = 'page-btn';
+        lastBtn.textContent = total_pages;
+        lastBtn.onclick = () => changePage(total_pages);
+        container.appendChild(lastBtn);
+    }
+
+    // 下一页按钮
     if (current_page < total_pages) {
         const nextBtn = document.createElement('button');
         nextBtn.className = 'page-btn';
@@ -374,7 +570,34 @@ function renderPagination(pagination) {
         nextBtn.onclick = () => changePage(current_page + 1);
         container.appendChild(nextBtn);
     }
+
+    // 更新总数显示
+    if (document.getElementById('totalCount')) {
+        document.getElementById('totalCount').textContent = total_items || 0;
+    }
 }
+
+function loadStats() {
+    fetch('/api/entity_config/stats')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('获取统计信息失败: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success) {
+                const data = result.data || result;
+                document.getElementById('totalEntities').textContent = data.entities || 0;
+                document.getElementById('totalRelations').textContent = data.relationships || 0;
+                document.getElementById('modifiedCount').textContent = '0';
+            }
+        })
+        .catch(error => {
+            console.error('加载统计信息失败:', error);
+        });
+}
+
 
 function changePage(page) {
     currentPage = page;

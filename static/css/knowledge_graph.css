@@ -1,3 +1,345 @@
+/* 知识图谱详情卡片样式 */
+.node-details-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 380px;
+    max-height: 85vh;
+    background: linear-gradient(135deg, rgba(30, 30, 50, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(72, 219, 251, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    z-index: 1000;
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.panel-header {
+    padding: 20px 24px;
+    background: rgba(40, 40, 60, 0.8);
+    border-bottom: 1px solid rgba(72, 219, 251, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: #48dbfb;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    background: rgba(72, 219, 251, 0.1);
+    border: 1px solid rgba(72, 219, 251, 0.3);
+    color: #48dbfb;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.btn-icon:hover {
+    background: rgba(72, 219, 251, 0.2);
+    transform: translateY(-2px);
+}
+
+.close-panel {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    color: #FF6B6B;
+}
+
+.close-panel:hover {
+    background: rgba(255, 107, 107, 0.2);
+}
+
+.panel-content {
+    padding: 0;
+    max-height: calc(85vh - 70px);
+    overflow-y: auto;
+}
+
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: rgba(72, 219, 251, 0.5);
+    border-radius: 3px;
+}
+
+/* 节点信息样式 - 深色高对比 */
+.node-info {
+    padding: 24px;
+    background: rgba(15, 15, 35, 0.5);
+    margin-bottom: 1px;
+}
+
+.node-info h4 {
+    margin: 0 0 16px 0;
+    color: #e8e8f0;
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.node-info h4::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #48dbfb;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.info-item {
+    background: rgba(15, 15, 35, 0.5);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(72, 219, 251, 0.1);
+}
+
+.info-item label {
+    display: block;
+    color: #48dbfb;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item span {
+    color: #e8e8f0;
+    font-size: 14px;
+    font-weight: 500;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 属性区域样式 - 修复：增加滚动支持 */
+.properties-section {
+    padding: 24px;
+    max-height: 400px;          /* 限制最大高度 */
+    overflow-y: auto;           /* 垂直滚动条 */
+    overflow-x: hidden;         /* 隐藏横向滚动 */
+}
+
+
+.properties-section h5 {
+    color: #48dbfb;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.properties-section h5::before {
+    content: '📋';
+    font-size: 12px;
+}
+
+/* 属性标签页样式 */
+.property-tabs {
+    background: rgba(40, 40, 60, 0.5);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(72, 219, 251, 0.1);
+}
+
+.tab-nav {
+    display: flex;
+    background: rgba(30, 30, 50, 0.8);
+    border-bottom: 1px solid rgba(72, 219, 251, 0.2);
+    overflow-x: auto;
+}
+
+.tab-nav::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tab-nav::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.tab-nav::-webkit-scrollbar-thumb {
+    background: rgba(72, 219, 251, 0.5);
+}
+
+.tab-nav-btn {
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: #a0a0c0;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    border-right: 1px solid rgba(72, 219, 251, 0.1);
+    position: relative;
+    min-width: 80px;
+}
+
+.tab-nav-btn:last-child {
+    border-right: none;
+}
+
+.tab-nav-btn:hover {
+    color: #48dbfb;
+    background: rgba(72, 219, 251, 0.05);
+}
+
+.tab-nav-btn.active {
+    color: #48dbfb;
+    background: rgba(72, 219, 251, 0.1);
+    font-weight: 600;
+}
+
+.tab-nav-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #48dbfb;
+}
+
+/* 标签内容包装器 - 修复：允许内部滚动 */
+.tab-content-wrapper {
+    padding: 16px;
+    max-height: 300px;          /* 限制高度 */
+    overflow-y: auto;           /* 垂直滚动 */
+    overflow-x: hidden;         /* 隐藏横向滚动 */
+}
+
+
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* 属性项样式 - 深色高对比 */
+.property-item {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(20, 20, 40, 0.6);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(72, 219, 251, 0.1);
+    transition: all 0.3s ease;
+}
+
+.property-item:hover {
+    background: rgba(72, 219, 251, 0.08);
+    border-color: rgba(72, 219, 251, 0.25);
+    transform: translateX(4px);
+}
+
+.property-key {
+    color: #48dbfb;
+    font-weight: 600;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+
+.property-key::after {
+    content: ':';
+    margin-left: auto;
+    color: rgba(72, 219, 251, 0.5);
+}
+
+.property-value {
+    color: #e8e8f0;
+    font-size: 13px;
+    word-break: break-word;
+    padding: 4px 0;
+    line-height: 1.6;
+}
+
+.no-properties {
+    padding: 32px 24px;
+    text-align: center;
+    color: #a0a0c0;
+    font-style: italic;
+    background: rgba(20, 20, 40, 0.4);
+    border-radius: 12px;
+    border: 2px dashed rgba(72, 219, 251, 0.15);
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .node-details-panel {
+        width: calc(100% - 40px);
+        max-width: 380px;
+    }
+
+    .property-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .property-key::after {
+        content: '';
+    }
+}
+
+/* 强制使用深色主题 - 不跟随系统偏好 */
 :root {
     --primary: #3498db;
     --secondary: #9b59b6;
@@ -586,8 +928,6 @@ body {
     margin-top: 10px;
 }
 
-/* 新增样式 */
-
 /* 详情面板样式 - 缩小版 */
 .node-details-panel {
     width: 320px !important;
@@ -618,6 +958,12 @@ body {
     height: 100vh !important;
     z-index: 9999 !important;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+}
+/* 全屏模式下详情卡片内容滚动 */
+.kg-fullscreen .panel-content {
+    max-height: calc(85vh - 120px);  /* 计算可用高度 */
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* 顶部中央查询控制区 */
@@ -790,4 +1136,26 @@ body {
 /* 禁用body滚动 */
 body.kg-fullscreen-active {
     overflow: hidden !important;
+}
+
+/* 修复：强制详情卡片文字颜色，避免白底白字 */
+.node-details-panel .property-value,
+.node-details-panel .info-item span,
+.node-details-panel .section-title,
+.node-details-panel h4,
+.node-details-panel h5 {
+    color: #2c3e50 !important;  /* 深灰色文字 */
+}
+
+/* 修复：属性键名颜色 */
+.node-details-panel .property-key {
+    color: #34495e !important;  /* 稍深灰色 */
+}
+
+/* 修复：标签按钮文字颜色 */
+.node-details-panel .tab-nav-btn {
+    color: #7f8c8d !important;  /* 默认标签颜色 */
+}
+.node-details-panel .tab-nav-btn.active {
+    color: #3498db !important;  /* 激活标签蓝色 */
 }

@@ -5,6 +5,12 @@ window.showMultiHopQuery = showMultiHopQuery;
 window.showTripleQuery = showTripleQuery;
 window.changeLayout = changeLayout;
 window.updateTripleCount = updateTripleCount;
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // SweetAlert2 全局配置
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,9 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // 初始化图谱
-    initKnowledgeGraph();
 });
 
 // 全屏状态管理
@@ -297,8 +300,26 @@ function showNodeDetailsFullscreen(node) {
 
 // 全屏模式显示关系详情
 function showEdgeDetailsFullscreen(edge) {
-    // 实现类似 showNodeDetailsFullscreen 的逻辑
-    // 为简洁省略具体实现，可参考普通模式的 showEdgeDetails
+    const panel = document.getElementById('nodeDetailsPanel');
+    const content = document.getElementById('nodeDetailsContent');
+    const sourceNode = allNodes.find(n => n.id === edge.from);
+    const targetNode = allNodes.find(n => n.id === edge.to);
+
+    Swal.fire({
+        title: '关系详情',
+        html: `
+            <div style="text-align: left;">
+                <p><strong>关系类型:</strong> ${edge.type}</p>
+                <p><strong>源节点:</strong> ${sourceNode?.label || edge.from}</p>
+                <p><strong>目标节点:</strong> ${targetNode?.label || edge.to}</p>
+                <p><strong>关系ID:</strong> ${edge.id}</p>
+            </div>
+        `,
+        background: 'rgba(26, 26, 46, 0.95)',
+        color: '#fff',
+        confirmButtonColor: '#48dbfb',
+        width: '500px'
+    });
 }
 
 // 查询功能实现
@@ -577,6 +598,21 @@ function bindKGEvents() {
         }, 1000);
     });
 
+    // 节点数量滑块
+    const limitSlider = document.getElementById('kgLimitSlider');
+    const limitValue = document.getElementById('kgLimitValue');
+    const limitApply = document.getElementById('kgLimitApply');
+    if (limitSlider && limitValue) {
+        limitSlider.addEventListener('input', function() {
+            limitValue.textContent = this.value;
+        });
+    }
+    if (limitApply) {
+        limitApply.addEventListener('click', function() {
+            refreshGraph();
+        });
+    }
+
     // 导出按钮
     document.getElementById('kg-export').addEventListener('click', exportKGData);
 
@@ -607,7 +643,11 @@ function bindKGEvents() {
 function refreshGraph() {
     showLoading('正在加载知识图谱数据...');
 
-    fetch('/api/kg_data')
+    // 从slider获取当前限制数量
+    const slider = document.getElementById('kgLimitSlider');
+    const limit = slider ? slider.value : 500;
+
+    fetch('/api/kg_data?limit=' + limit)
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应异常: ' + response.status);
@@ -678,6 +718,9 @@ function darkenColor(color, amount) {
 }
 
 // 渲染图谱
+// knowledge_graph.js - renderGraph 完整方法
+// 修复了关系ID不匹配、escapeHtml未定义、详情面板显示等问题
+
 function renderGraph(data) {
     if (!container) {
         console.error('图谱容器未找到');
@@ -703,13 +746,13 @@ function renderGraph(data) {
             const nodeColor = nodeColorMap.get(nodeType) || '#B0B0B0';
 
             return {
-                id: node.id,
+                id: node.id,  // 使用 elementId
                 label: node.name.length > 20 ? node.name.substring(0, 20) + '...' : node.name,
                 title: `
                     <div class="node-tooltip">
-                        <strong>${node.name}</strong><br/>
-                        类型: ${nodeType}<br/>
-                        ID: ${node.id}
+                        <strong>${escapeHtml(node.name)}</strong><br/>
+                        类型: ${escapeHtml(nodeType)}<br/>
+                        ID: ${escapeHtml(node.id)}
                     </div>
                 `,
                 color: {
@@ -748,9 +791,9 @@ function renderGraph(data) {
             const edgeColor = edgeColorMap.get(edgeType) || 'rgba(255, 255, 255, 0.6)';
 
             return {
-                id: `${link.source}-${link.target}-${link.type}`,
-                from: link.source,
-                to: link.target,
+                id: link.rel_id,  // ✅ 关键修复：使用后端返回的真实 elementId
+                from: link.source_id,  // ✅ 使用 elementId
+                to: link.target_id,    // ✅ 使用 elementId
                 label: edgeType.length > 15 ? edgeType.substring(0, 15) + '...' : edgeType,
                 arrows: 'to',
                 color: {
@@ -769,7 +812,7 @@ function renderGraph(data) {
                     type: 'cubicBezier',
                     roundness: 0.2
                 },
-                width: 2 + (Math.random() * 2), // 随机宽度增加视觉层次
+                width: 2 + (Math.random() * 2),
                 shadow: true,
                 length: 200,
                 physics: true,
@@ -855,30 +898,23 @@ function renderGraph(data) {
         // 创建网络
         network = new vis.Network(container, graphData, options);
 
+        // 添加节点点击事件
+        network.on('selectNode', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = nodes.get(nodeId);
+                showNodeDetails(node);
+            }
+        });
 
-    // 添加节点点击事件
-    network.on('selectNode', function(params) {
-        if (params.nodes.length > 0) {
-            const nodeId = params.nodes[0];
-            const node = nodes.get(nodeId);
-            showNodeDetails(node);
-        }
-    });
-
-    // 添加关系点击事件
-    network.on('selectEdge', function(params) {
-        if (params.edges.length > 0) {
-            const edgeId = params.edges[0];
-            const edge = edges.get(edgeId);
-            showEdgeDetails(edge);
-        }
-    });
-
-    // 移除 hover 事件（不再显示临时卡片）
-    // network.on("hoverNode", function(params) { ... }); // 已删除
-    // network.on("hoverEdge", function(params) { ... }); // 已删除
-    // network.on("blurNode", function(params) { ... }); // 已删除
-    // network.on("blurEdge", function(params) { ... }); // 已删除
+        // 添加关系点击事件
+        network.on('selectEdge', function(params) {
+            if (params.edges.length > 0) {
+                const edgeId = params.edges[0];
+                const edge = edges.get(edgeId);
+                showEdgeDetails(edge);
+            }
+        });
 
         network.on('afterDrawing', function(ctx) {
             // 可选的后期绘制效果
@@ -893,7 +929,7 @@ function renderGraph(data) {
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle"></i>
                 <h3>渲染失败</h3>
-                <p>${error.message}</p>
+                <p>${escapeHtml(error.message)}</p>
                 <button class="btn btn-outline" onclick="refreshGraph()">
                     <i class="fas fa-redo"></i> 重试
                 </button>
@@ -1004,38 +1040,89 @@ function showNodeDetails(node) {
     if (!panel || !content) return;
 
     // 从图数据库获取最新属性
-    fetch(`/api/entity_config/node/${node.id}`)
+    fetch(`/api/entity_config/node_details?id=${encodeURIComponent(node.id)}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 const properties = data.node.properties || {};
                 const propsCount = Object.keys(properties).length;
+                const propertyKeys = Object.keys(properties);
 
-                // 构建标签页结构
+                // 构建美观的详情卡片HTML
                 let propsHtml = '';
+
                 if (propsCount === 0) {
-                    propsHtml = '<div class="no-properties">暂无属性</div>';
+                    propsHtml = `
+                        <div class="no-properties">
+                            <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                            <p style="margin: 0;">暂无属性</p>
+                        </div>
+                    `;
+                } else if (propsCount <= 8) {
+                    // 属性较少时直接显示所有
+                    propertyKeys.forEach(key => {
+                        const value = properties[key];
+                        const displayValue = typeof value === 'object'
+                            ? JSON.stringify(value, null, 2)
+                            : String(value);
+
+                        const truncatedValue = displayValue.length > 100
+                            ? displayValue.substring(0, 100) + '...'
+                            : displayValue;
+
+                        propsHtml += `
+                            <div class="property-item">
+                                <div class="property-key">${escapeHtml(key)}</div>
+                                <div class="property-value" title="${escapeHtml(displayValue)}">${escapeHtml(truncatedValue)}</div>
+                            </div>
+                        `;
+                    });
                 } else {
-                    const tabs = Object.keys(properties);
+                    // 属性较多时使用标签页
+                    const tabs = [];
+                    const tabContent = [];
+
+                    // 将属性分组，每4个一组
+                    for (let i = 0; i < propertyKeys.length; i += 4) {
+                        const groupKeys = propertyKeys.slice(i, i + 4);
+                        const tabId = `tab-${i}`;
+                        const tabName = `属性 ${Math.floor(i/4) + 1}`;
+
+                        tabs.push(`<button class="tab-nav-btn ${i === 0 ? 'active' : ''}" data-tab="${tabId}">${tabName}</button>`);
+
+                        let groupHtml = '';
+                        groupKeys.forEach(key => {
+                            const value = properties[key];
+                            const displayValue = typeof value === 'object'
+                                ? JSON.stringify(value, null, 2)
+                                : String(value);
+
+                            const truncatedValue = displayValue.length > 100
+                                ? displayValue.substring(0, 100) + '...'
+                                : displayValue;
+
+                            groupHtml += `
+                                <div class="property-item">
+                                    <div class="property-key">${escapeHtml(key)}</div>
+                                    <div class="property-value" title="${escapeHtml(displayValue)}">${escapeHtml(truncatedValue)}</div>
+                                </div>
+                            `;
+                        });
+
+                        tabContent.push(`
+                            <div class="tab-pane ${i === 0 ? 'active' : ''}" id="${tabId}">
+                                ${groupHtml}
+                            </div>
+                        `);
+                    }
+
                     propsHtml = `
                         <div class="property-tabs">
                             <div class="tab-nav">
-                                ${tabs.map((key, idx) => `
-                                    <button class="tab-nav-btn ${idx === 0 ? 'active' : ''}"
-                                            data-tab="prop-${idx}">
-                                        ${key.substring(0, 10)}${key.length > 10 ? '...' : ''}
-                                    </button>
-                                `).join('')}
+                                ${tabs.join('')}
                             </div>
                             <div class="tab-content-wrapper">
-                                ${tabs.map((key, idx) => `
-                                    <div class="tab-pane ${idx === 0 ? 'active' : ''}" id="prop-${idx}">
-                                        <div class="property-item">
-                                            <span class="property-key">${key}:</span>
-                                            <span class="property-value" title="${properties[key]}">${properties[key]}</span>
-                                        </div>
-                                    </div>
-                                `).join('')}
+                                ${tabContent.join('')}
                             </div>
                         </div>
                     `;
@@ -1043,74 +1130,232 @@ function showNodeDetails(node) {
 
                 content.innerHTML = `
                     <div class="node-info">
-                        <h4>${node.label}</h4>
+                        <h4>
+                            <i class="fas fa-cube" style="margin-right: 8px;"></i>
+                            ${escapeHtml(node.label || '未命名节点')}
+                        </h4>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>类型</label>
-                                <span>${node.type || '未知'}</span>
+                                <label><i class="fas fa-tag"></i> 类型</label>
+                                <span>${escapeHtml(node.type || '未知')}</span>
                             </div>
                             <div class="info-item">
-                                <label>ID</label>
-                                <span>${node.id}</span>
+                                <label><i class="fas fa-fingerprint"></i> ID</label>
+                                <span title="${escapeHtml(node.id)}">${escapeHtml(node.id.substring(0, 20))}${node.id.length > 20 ? '...' : ''}</span>
+                            </div>
+                            <div class="info-item">
+                                <label><i class="fas fa-layer-group"></i> 颜色</label>
+                                <span style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 12px; height: 12px; background: ${node.color?.background || '#B0B0B0'}; border-radius: 2px;"></span>
+                                    ${node.color?.background || '#B0B0B0'}
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <label><i class="fas fa-expand-arrows-alt"></i> 大小</label>
+                                <span>${node.size || '默认'}</span>
                             </div>
                         </div>
                     </div>
                     <div class="properties-section">
-                        <h5>属性列表 (${propsCount})</h5>
+                        <h5>
+                            <i class="fas fa-list"></i>
+                            属性列表 
+                            <span style="color: #48dbfb; background: rgba(72, 219, 251, 0.1); padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                                ${propsCount} 个
+                            </span>
+                        </h5>
                         ${propsHtml}
                     </div>
                 `;
 
-                bindPropertyTabs();
+                // 绑定标签页切换事件
+                bindTabEvents();
 
-                // 设置面板样式 - 缩小版
+                // 显示面板
                 panel.style.display = 'block';
-                panel.style.position = 'absolute';
-                panel.style.top = '20px';
-                panel.style.right = '20px';
-                panel.style.width = '320px';  // 缩小到320px
-                panel.style.maxHeight = '70vh'; // 缩小到70vh
-                panel.style.zIndex = '10';
-                panel.style.background = 'rgba(255, 255, 255, 0.95)';
-                panel.style.backdropFilter = 'blur(15px)';
-                panel.style.border = '1px solid rgba(0, 0, 0, 0.1)';
-                panel.style.borderRadius = '12px';
-                panel.style.padding = '20px';
-                panel.style.overflow = 'hidden';
-                panel.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-                panel.style.fontSize = '13px'; // 缩小字体
+
+                // 添加动画效果
+                setTimeout(() => {
+                    panel.style.opacity = '1';
+                    panel.style.transform = 'translateX(0)';
+                }, 10);
+            } else {
+                console.error('获取节点详情失败:', data.error);
+                showError('获取节点详情失败');
             }
+        })
+        .catch(error => {
+            console.error('获取节点详情失败:', error);
+            content.innerHTML = `
+                <div class="node-info">
+                    <h4>${escapeHtml(node.label || '未命名节点')}</h4>
+                    <div style="padding: 20px; text-align: center; color: #FF6B6B;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; margin-bottom: 12px;"></i>
+                        <p>获取详情失败: ${error.message}</p>
+                    </div>
+                </div>
+            `;
+            panel.style.display = 'block';
         });
 }
 
-function showEdgeDetails(edge) {
-    const panel = document.getElementById('nodeDetailsPanel');
-    const content = document.getElementById('nodeDetailsContent');
-    const sourceNode = allNodes.find(n => n.id === edge.from);
-    const targetNode = allNodes.find(n => n.id === edge.to);
+function bindTabEvents() {
+    const tabButtons = document.querySelectorAll('.tab-nav-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
 
-    Swal.fire({
-        title: '关系详情',
-        html: `
-            <div style="text-align: left;">
-                <p><strong>关系类型:</strong> ${edge.type}</p>
-                <p><strong>源节点:</strong> ${sourceNode?.label || edge.from}</p>
-                <p><strong>目标节点:</strong> ${targetNode?.label || edge.to}</p>
-                <p><strong>关系ID:</strong> ${edge.id}</p>
-            </div>
-        `,
-        background: 'rgba(26, 26, 46, 0.95)',
-        color: '#fff',
-        confirmButtonColor: '#48dbfb',
-        width: '500px'
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+
+            // 移除所有active类
+            tabButtons.forEach(b => b.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
+
+            // 激活当前标签
+            this.classList.add('active');
+            const targetPane = document.getElementById(targetTab);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+        });
     });
 }
 
+// 修改showEdgeDetails函数
+function showEdgeDetails(edge) {
+    const panel = document.getElementById('nodeDetailsPanel');
+    const content = document.getElementById('nodeDetailsContent');
+
+    // 找到相关的节点
+    const sourceNode = allNodes.find(n => n.id === edge.from);
+    const targetNode = allNodes.find(n => n.id === edge.to);
+    const edgeId = edge.id;
+    // 获取关系详情
+    fetch(`/api/entity_config/relation/${encodeURIComponent(edgeId)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const relation = data.relation;
+                const properties = relation.properties || {};
+                const propsCount = Object.keys(properties).length;
+
+                let propsHtml = '';
+                if (propsCount === 0) {
+                    propsHtml = `
+                        <div class="no-properties">
+                            <i class="fas fa-link" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                            <p style="margin: 0;">暂无属性</p>
+                        </div>
+                    `;
+                } else {
+                    Object.entries(properties).forEach(([key, value]) => {
+                        const displayValue = typeof value === 'object'
+                            ? JSON.stringify(value, null, 2)
+                            : String(value);
+
+                        const truncatedValue = displayValue.length > 100
+                            ? displayValue.substring(0, 100) + '...'
+                            : displayValue;
+
+                        propsHtml += `
+                            <div class="property-item">
+                                <div class="property-key">${escapeHtml(key)}</div>
+                                <div class="property-value" title="${escapeHtml(displayValue)}">${escapeHtml(truncatedValue)}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                content.innerHTML = `
+                    <div class="node-info">
+                        <h4>
+                            <i class="fas fa-link" style="margin-right: 8px;"></i>
+                            ${escapeHtml(edge.type || '关系')}
+                        </h4>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label><i class="fas fa-arrow-right"></i> 源节点</label>
+                                <span>${escapeHtml(sourceNode?.label || edge.from)}</span>
+                            </div>
+                            <div class="info-item">
+                                <label><i class="fas fa-arrow-left"></i> 目标节点</label>
+                                <span>${escapeHtml(targetNode?.label || edge.to)}</span>
+                            </div>
+                            <div class="info-item">
+                                <label><i class="fas fa-fingerprint"></i> 关系ID</label>
+                                <span title="${escapeHtml(edge.id)}">${escapeHtml(edge.id.substring(0, 20))}${edge.id.length > 20 ? '...' : ''}</span>
+                            </div>
+                            <div class="info-item">
+                                <label><i class="fas fa-palette"></i> 颜色</label>
+                                <span style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 12px; height: 12px; background: ${edge.color?.color || '#B0B0B0'}; border-radius: 2px;"></span>
+                                    ${edge.color?.color || '#B0B0B0'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="properties-section">
+                        <h5>
+                            <i class="fas fa-list"></i>
+                            关系属性
+                            <span style="color: #48dbfb; background: rgba(72, 219, 251, 0.1); padding: 2px 8px; border-radius: 12px; font-size: 12px;">
+                                ${propsCount} 个
+                            </span>
+                        </h5>
+                        ${propsHtml}
+                    </div>
+                `;
+
+                panel.style.display = 'block';
+            } else {
+                content.innerHTML = `
+                    <div class="node-info">
+                        <h4>${escapeHtml(edge.type || '关系')}</h4>
+                        <div style="padding: 20px; text-align: center; color: #FF6B6B;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 32px; margin-bottom: 12px;"></i>
+                            <p>获取关系详情失败</p>
+                        </div>
+                    </div>
+                `;
+                panel.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('获取关系详情失败:', error);
+            content.innerHTML = `
+                <div class="node-info">
+                    <h4>${escapeHtml(edge.type || '关系')}</h4>
+                    <div style="padding: 20px; text-align: center; color: #FF6B6B;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; margin-bottom: 12px;"></i>
+                        <p>获取详情失败: ${error.message}</p>
+                    </div>
+                </div>
+            `;
+            panel.style.display = 'block';
+        });
+}
+
+function togglePanelSize() {
+    const panel = document.getElementById('nodeDetailsPanel');
+    if (panel.classList.contains('expanded')) {
+        panel.classList.remove('expanded');
+        panel.style.width = '380px';
+        panel.style.maxHeight = '85vh';
+    } else {
+        panel.classList.add('expanded');
+        panel.style.width = '600px';
+        panel.style.maxHeight = '90vh';
+    }
+}
+
+
 function closeNodeDetails() {
     const panel = document.getElementById('nodeDetailsPanel');
-    if (panel) {
+    panel.style.opacity = '0';
+    panel.style.transform = 'translateX(50px)';
+    setTimeout(() => {
         panel.style.display = 'none';
-    }
+    }, 300);
 }
 
 function showEmptyGraphState() {
