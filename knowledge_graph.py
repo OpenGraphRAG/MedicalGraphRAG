@@ -14,7 +14,12 @@ from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.neighbors import NearestNeighbors
 from pyvis.network import Network
+import re
 
+import time
+from neo4j.exceptions import ServiceUnavailable, Neo4jError
+import threading
+from queue import Queue
 
 class KnowledgeGraphManager:
     def __init__(self, ann_leaf_size: int = 30):
@@ -39,6 +44,49 @@ class KnowledgeGraphManager:
             self._save_vector_index()
         elif self.driver and not self.is_first_run:
             self.build_ann_models()
+
+        self.connection_pool = Queue(maxsize=5)  # 简单的连接池
+        self.driver = None
+        self._init_connection_pool()
+
+    def _init_connection_pool(self):
+        """初始化连接池"""
+        try:
+            # 创建初始连接
+            self.driver = self._init_graph_db()
+            if self.driver:
+                # 将驱动放入连接池
+                self.connection_pool.put(self.driver)
+                print("✅ 连接池初始化成功")
+        except Exception as e:
+            print(f"❌ 连接池初始化失败: {e}")
+
+    def _get_driver(self, max_retries=3):
+        """获取数据库驱动，支持重试"""
+        if self.driver:
+            # 检查连接是否有效
+            try:
+                with self.driver.session() as session:
+                    session.run("RETURN 1 as test").single()
+                return self.driver
+            except Exception:
+                # 连接失效，重新创建
+                self.driver = None
+
+        # 重新创建连接
+        for i in range(max_retries):
+            try:
+                self.driver = self._init_graph_db()
+                if self.driver:
+                    print(f"✅ 第{i + 1}次重连成功")
+                    return self.driver
+            except Exception as e:
+                print(f"❌ 第{i + 1}次重连失败: {e}")
+                time.sleep(2)  # 等待2秒后重试
+
+        return None
+
+
 
     def _init_vector_index(self) -> Dict:
         """
@@ -100,34 +148,30 @@ class KnowledgeGraphManager:
 
     def _init_graph_db(self) -> Optional[Any]:
         """
-        初始化图数据库连接
-
-        返回:
-            Neo4j驱动对象或None（如果连接失败）
+        初始化图数据库连接，增加连接配置
         """
         try:
-            # 创建数据库驱动
+            # 创建数据库驱动，增加连接超时配置
             driver = GraphDatabase.driver(
-                config.NEO4J_URI,  # 数据库地址
-                auth=basic_auth(config.NEO4J_USER, config.NEO4J_PASSWORD)  # 认证信息
+                config.NEO4J_URI,
+                auth=basic_auth(config.NEO4J_USER, config.NEO4J_PASSWORD),
+                connection_timeout=30,  # 连接超时30秒
+                max_connection_lifetime=7200,  # 连接最大生命周期2小时
+                connection_acquisition_timeout=60,  # 获取连接超时60秒
+                keep_alive=True,  # 保持连接活跃
+                max_connection_pool_size=5,  # 连接池大小
             )
 
-            # 测试连接是否成功
-            try:
-                with driver.session() as session:
-                    # 运行简单查询测试连接
-                    result = session.run("RETURN 'connection_test' AS test")
-                    record = result.single()  # 获取第一条记录
-                    result.consume()  # 显式消费结果集（释放资源）
+            # 测试连接
+            with driver.session() as session:
+                result = session.run("RETURN 'connection_test' AS test")
+                record = result.single()
+                result.consume()
 
-                    # 检查测试结果
-                    if record and record["test"] == "connection_test":
-                        print("✅ Neo4j连接成功")
-                        return driver
-            except Exception as test_e:
-                print(f"❌ 连接测试失败: {str(test_e)}")
+                if record and record["test"] == "connection_test":
+                    print("✅ Neo4j连接成功")
+                    return driver
 
-            print("❌ Neo4j连接测试失败")
             return None
         except Exception as e:
             print(f"❌ 图数据库连接失败: {e}")
@@ -1277,76 +1321,77 @@ class KnowledgeGraphManager:
 
         return narrative
 
-    def query_whole_graph(self, limit: int = 500) -> Dict:
-        """
-        查询整个知识图谱（限制数量）
-        修改 id() 为 elementId()
-        """
-        if not self.driver:
-            return {"nodes": [], "links": []}
-
-        try:
-            with self.driver.session() as session:
-                # 构建查询语句（查询所有关系，限制数量）- 修改 id() 为 elementId()
-                query = """
-                        MATCH (start)-[r]->(end)
-                        RETURN start.name AS source, 
-                               labels(start)[0] AS source_type,
-                               type(r) AS relationship, 
-                               end.name AS target,
-                               labels(end)[0] AS target_type,
-                               elementId(start) AS source_id,
-                               elementId(end) AS target_id
-                        LIMIT $limit
-                        """
-
-                # 执行查询
-                result = session.run(query, limit=limit)
-                records = [dict(record) for record in result]
-
-                # 转换为前端需要的格式
-                nodes = []
-                links = []
-                node_set = set()
-
-                for record in records:
-                    source_id = record["source_id"]
-                    source_name = record["source"]
-                    source_type = record["source_type"]
-                    target_id = record["target_id"]
-                    target_name = record["target"]
-                    target_type = record["target_type"]
-                    rel_type = record["relationship"]
-
-                    # 添加源节点
-                    if source_id not in node_set:
-                        nodes.append({
-                            "id": source_id,
-                            "name": source_name,
-                            "type": source_type
-                        })
-                        node_set.add(source_id)
-
-                    # 添加目标节点
-                    if target_id not in node_set:
-                        nodes.append({
-                            "id": target_id,
-                            "name": target_name,
-                            "type": target_type
-                        })
-                        node_set.add(target_id)
-
-                    # 添加关系
-                    links.append({
-                        "source": source_id,
-                        "target": target_id,
-                        "type": rel_type
-                    })
-
-                return {"nodes": nodes, "links": links}
-        except Exception as e:
-            print(f"❌ 图数据库查询失败: {e}")
-            return {"nodes": [], "links": []}
+    # def query_whole_graph(self, limit: int = 500) -> Dict:
+    #     """
+    #     查询整个知识图谱（限制数量）
+    #     修改 id() 为 elementId()
+    #     """
+    #     if not self.driver:
+    #         return {"nodes": [], "links": []}
+    #
+    #     try:
+    #         with self.driver.session() as session:
+    #             # 构建查询语句（查询所有关系，限制数量）- 修改 id() 为 elementId()
+    #             query = """
+    #                     MATCH (start)-[r]->(end)
+    #                     RETURN start.name AS source,
+    #                            labels(start)[0] AS source_type,
+    #                            type(r) AS relationship,
+    #                            end.name AS target,
+    #                            labels(end)[0] AS target_type,
+    #                            elementId(start) AS source_id,
+    #                            elementId(end) AS target_id,
+    #                            elementId(r) as rel_id
+    #                     LIMIT $limit
+    #                     """
+    #
+    #             # 执行查询
+    #             result = session.run(query, limit=limit)
+    #             records = [dict(record) for record in result]
+    #
+    #             # 转换为前端需要的格式
+    #             nodes = []
+    #             links = []
+    #             node_set = set()
+    #
+    #             for record in records:
+    #                 source_id = record["source_id"]
+    #                 source_name = record["source"]
+    #                 source_type = record["source_type"]
+    #                 target_id = record["target_id"]
+    #                 target_name = record["target"]
+    #                 target_type = record["target_type"]
+    #                 rel_type = record["relationship"]
+    #
+    #                 # 添加源节点
+    #                 if source_id not in node_set:
+    #                     nodes.append({
+    #                         "id": source_id,
+    #                         "name": source_name,
+    #                         "type": source_type
+    #                     })
+    #                     node_set.add(source_id)
+    #
+    #                 # 添加目标节点
+    #                 if target_id not in node_set:
+    #                     nodes.append({
+    #                         "id": target_id,
+    #                         "name": target_name,
+    #                         "type": target_type
+    #                     })
+    #                     node_set.add(target_id)
+    #
+    #                 # 添加关系
+    #                 links.append({
+    #                     "source": source_id,
+    #                     "target": target_id,
+    #                     "type": rel_type
+    #                 })
+    #
+    #             return {"nodes": nodes, "links": links}
+    #     except Exception as e:
+    #         print(f"❌ 图数据库查询失败: {e}")
+    #         return {"nodes": [], "links": []}
 
     def get_kg_statistics(self) -> Dict[str, int]:
         """获取知识图谱统计信息"""
@@ -1372,37 +1417,29 @@ class KnowledgeGraphManager:
 
     def query_whole_graph(self, limit: int = 500) -> Dict:
         """
-                查询整个知识图谱（限制数量）
-
-                参数:
-                    limit: 返回的关系数量限制
-
-                返回:
-                    {"nodes": 节点列表, "links": 关系列表}
-                """
+        查询整个知识图谱（限制数量）
+        """
         if not self.driver:
             return {"nodes": [], "links": []}
 
         try:
             with self.driver.session() as session:
-                # 构建查询语句（查询所有关系，限制数量）
                 query = """
-                        MATCH (start)-[r]->(end)
-                        RETURN start.name AS source, 
-                               labels(start)[0] AS source_type,
-                               type(r) AS relationship, 
-                               end.name AS target,
-                               labels(end)[0] AS target_type,
-                               elementId(start) as source_id,
-                               elementId(end) as target_id
-                        LIMIT $limit
-                        """
+                    MATCH (start)-[r]->(end)
+                    RETURN start.name AS source, 
+                           labels(start)[0] AS source_type,
+                           type(r) AS relationship, 
+                           end.name AS target,
+                           labels(end)[0] AS target_type,
+                           elementId(start) as source_id,
+                           elementId(end) as target_id,
+                           elementId(r) as rel_id
+                    LIMIT $limit
+                """
 
-                # 执行查询
                 result = session.run(query, limit=limit)
                 records = [dict(record) for record in result]
 
-                # 转换为前端需要的格式
                 nodes = []
                 links = []
                 node_set = set()
@@ -1434,10 +1471,11 @@ class KnowledgeGraphManager:
                         })
                         node_set.add(target_id)
 
-                    # 添加关系
+                    # 【核心修复】修改 relations 字段格式，匹配前端期望
                     links.append({
-                        "source": source_id,
-                        "target": target_id,
+                        "rel_id": record["rel_id"],  # 添加关系ID
+                        "source_id": source_id,  # 改为 source_id
+                        "target_id": target_id,  # 改为 target_id
                         "type": rel_type
                     })
 
@@ -1446,74 +1484,184 @@ class KnowledgeGraphManager:
             print(f"❌ 图数据库查询失败: {e}")
             return {"nodes": [], "links": []}
 
-    # 在knowledge_graph.py的KnowledgeGraphManager类中添加以下方法
-
     def get_triples_paginated(self, page: int = 1, per_page: int = 3, search: str = '') -> Dict:
-        """分页获取三元组数据（头节点-关系-尾节点）"""
-        if not self.driver:
+        """修复版：添加连接检查和重试"""
+        # 获取有效的driver
+        driver = self._get_driver()
+        if not driver:
             return {'triples': [], 'total_pages': 0, 'total_items': 0}
 
         try:
-            with self.driver.session() as session:
-                # 计算跳过数量
-                skip = (page - 1) * per_page
+            # 参数安全限制
+            page = max(1, min(page, 100))
+            per_page = max(1, min(per_page, 10))
 
-                # 构建查询（支持搜索）
-                match_clause = "MATCH (h)-[r]->(t)"
+            with driver.session() as session:
+                # 设置查询超时
+                session._run_config = {"timeout": 30}  # 30秒超时
+
+                # 构建参数
+                params = {}
                 where_clause = ""
-                if search:
-                    where_clause = f"WHERE h.name CONTAINS '{search}' OR t.name CONTAINS '{search}' OR type(r) CONTAINS '{search}'"
 
-                # 获取总数量
-                count_query = f"{match_clause} {where_clause} RETURN count(*) as total"
-                total_result = session.run(count_query)
-                total_items = total_result.single()['total']
-                total_pages = (total_items + per_page - 1) // per_page
+                if search and search.strip():
+                    # 清理搜索词
+                    import re
+                    safe_search = re.sub(r'[^\w\s\.\-_,]', '', search)
+                    if safe_search:
+                        where_clause = "WHERE h.name CONTAINS $search OR t.name CONTAINS $search OR type(r) CONTAINS $search"
+                        params['search'] = safe_search
+
+                # 获取总数 - 添加超时保护
+                count_query = f"MATCH (h)-[r]->(t) {where_clause} RETURN count(*) as total"
+                try:
+                    total_result = session.run(count_query, params)
+                    total_record = total_result.single()
+                    total_items = total_record['total'] if total_record else 0
+                except Exception as e:
+                    print(f"⚠️ 获取总数失败，使用默认值: {e}")
+                    total_items = 0
+
+                # 限制最大数量
+                if total_items > 10000:
+                    total_items = 10000
+
+                total_pages = max(1, (total_items + per_page - 1) // per_page)
+
+                # 如果请求的页码超出范围，调整为最后一页
+                if page > total_pages:
+                    page = total_pages
 
                 # 获取分页数据
+                skip = (page - 1) * per_page
+                params['skip'] = skip
+                params['limit'] = per_page
+
                 data_query = f"""
-                {match_clause} {where_clause}
-                RETURN id(h) as head_tid, h.name as head_name, labels(h)[0] as head_type,
-                       id(t) as tail_tid, t.name as tail_name, labels(t)[0] as tail_type,
-                       id(r) as rid, type(r) as relation_type, properties(r) as relation_props,
-                       properties(h) as head_props, properties(t) as tail_props
-                ORDER BY head_name, relation_type, tail_name
-                SKIP {skip} LIMIT {per_page}
+                MATCH (h)-[r]->(t)
+                {where_clause}
+                RETURN 
+                    elementId(h) as head_tid,
+                    h.name as head_name,
+                    labels(h)[0] as head_type,
+                    properties(h) as head_props,
+                    elementId(t) as tail_tid,
+                    t.name as tail_name,
+                    labels(t)[0] as tail_type,
+                    properties(t) as tail_props,
+                    elementId(r) as rid,
+                    type(r) as relation_type,
+                    properties(r) as relation_props
+                ORDER BY head_name
+                SKIP $skip LIMIT $limit
                 """
 
-                results = session.run(data_query)
+                results = session.run(data_query, params)
                 triples = []
 
                 for record in results:
-                    triples.append({
-                        'head': {
-                            'tid': record['head_tid'],
-                            'name': record['head_name'],
-                            'type': record['head_type'],
-                            'properties': record['head_props'] or {}
-                        },
-                        'tail': {
-                            'tid': record['tail_tid'],
-                            'name': record['tail_name'],
-                            'type': record['tail_type'],
-                            'properties': record['tail_props'] or {}
-                        },
-                        'relation': {
-                            'rid': record['rid'],
-                            'type': record['relation_type'],
-                            'properties': record['relation_props'] or {}
+                    try:
+                        # 处理属性数据
+                        head_props = dict(record['head_props']) if record['head_props'] else {}
+                        tail_props = dict(record['tail_props']) if record['tail_props'] else {}
+                        relation_props = dict(record['relation_props']) if record['relation_props'] else {}
+
+                        triple = {
+                            'head': {
+                                'tid': str(record['head_tid']),
+                                'name': record['head_name'] or '未命名',
+                                'type': record['head_type'] or '实体',
+                                'properties': head_props
+                            },
+                            'tail': {
+                                'tid': str(record['tail_tid']),
+                                'name': record['tail_name'] or '未命名',
+                                'type': record['tail_type'] or '实体',
+                                'properties': tail_props
+                            },
+                            'relation': {
+                                'rid': str(record['rid']),
+                                'type': record['relation_type'] or '相关',
+                                'properties': relation_props
+                            }
                         }
-                    })
+                        triples.append(triple)
+
+                    except Exception as e:
+                        print(f"处理记录时出错: {e}")
+                        continue
 
                 return {
                     'triples': triples,
                     'total_pages': total_pages,
-                    'total_items': total_items
+                    'total_items': total_items,
+                    'current_page': page,
+                    'per_page': per_page
                 }
+
         except Exception as e:
             print(f"分页获取三元组失败: {e}")
-            return {'triples': [], 'total_pages': 0, 'total_items': 0}
+            import traceback
+            traceback.print_exc()
+            return {
+                'triples': [],
+                'total_pages': 0,
+                'total_items': 0,
+                'current_page': page,
+                'per_page': per_page
+            }
 
+    # 添加统计信息方法
+    def get_kg_statistics_detailed(self) -> Dict[str, int]:
+        """获取详细的图谱统计信息"""
+        driver = self._get_driver()
+        if not driver:
+            return {"entities": 0, "relationships": 0}
+
+        try:
+            with driver.session() as session:
+                # 查询实体数量
+                result = session.run("MATCH (e) RETURN count(e) as entity_count")
+                entity_record = result.single()
+                entity_count = entity_record["entity_count"] if entity_record else 0
+
+                # 查询关系数量
+                result = session.run("MATCH ()-[r]->() RETURN count(r) as rel_count")
+                rel_record = result.single()
+                rel_count = rel_record["rel_count"] if rel_record else 0
+
+                return {
+                    "entities": entity_count,
+                    "relationships": rel_count
+                }
+        except Exception as e:
+            print(f"❌ 获取详细统计信息失败: {e}")
+            return {"entities": 0, "relationships": 0}
+
+    def _check_memory_usage(self):
+        """检查内存使用，如果太高就清理"""
+        import psutil
+        import os
+        import gc
+
+        process = psutil.Process(os.getpid())
+        memory_percent = process.memory_percent()
+
+        if memory_percent > 70:  # 超过70%就清理
+            print(f"内存使用率高 ({memory_percent:.1f}%)，执行清理...")
+            gc.collect()
+
+            if hasattr(self, 'embeddings_cache'):
+                # 清理缓存
+                cache_size = len(self.embeddings_cache)
+                if cache_size > 1000:
+                    # 保留最近的500个
+                    keys_to_keep = list(self.embeddings_cache.keys())[-500:]
+                    new_cache = {}
+                    for key in keys_to_keep:
+                        new_cache[key] = self.embeddings_cache[key]
+                    self.embeddings_cache = new_cache
+                    print(f"清理嵌入缓存: {cache_size} -> {len(new_cache)}")
     def get_triple_details(self, head_tid: int, tail_tid: int, rid: int) -> Dict:
         """获取单个三元组的详细信息"""
         if not self.driver:
@@ -1590,34 +1738,44 @@ class KnowledgeGraphManager:
             print(f"更新三元组属性失败: {e}")
             return False
 
-    def update_node_properties(self, node_id: int, data: Dict) -> bool:
-        """单独更新节点属性"""
+    def update_node_properties(self, node_id: str, data: Dict) -> bool:
+        """更新节点属性 - 修复：使用elementId匹配"""
         if not self.driver:
             return False
 
         try:
             with self.driver.session() as session:
-                session.run("""
-                MATCH (n) WHERE id(n) = $nid
+                # ✅ 关键修复：使用 elementId() 而不是 id()
+                query = """
+                MATCH (n)
+                WHERE elementId(n) = $node_id
                 SET n += $props
-                """, nid=node_id, props=data.get('properties', {}))
-                return True
+                RETURN n
+                """
+
+                result = session.run(query, node_id=str(node_id), props=data.get('properties', {}))
+                return result.single() is not None  # 返回是否成功
         except Exception as e:
             print(f"更新节点属性失败: {e}")
             return False
 
-    def update_relation_properties(self, rid: int, data: Dict) -> bool:
-        """单独更新关系属性"""
+    def update_relation_properties(self, rid: str, data: Dict) -> bool:
+        """更新关系属性 - 修复：使用elementId匹配"""
         if not self.driver:
             return False
 
         try:
             with self.driver.session() as session:
-                session.run("""
-                MATCH ()-[r]->() WHERE id(r) = $rid
+                # ✅ 关键修复：使用 elementId() 而不是 id()
+                query = """
+                MATCH ()-[r]->()
+                WHERE elementId(r) = $rid
                 SET r += $props
-                """, rid=rid, props=data.get('properties', {}))
-                return True
+                RETURN r
+                """
+
+                result = session.run(query, rid=str(rid), props=data.get('properties', {}))
+                return result.single() is not None  # 返回是否成功
         except Exception as e:
             print(f"更新关系属性失败: {e}")
             return False

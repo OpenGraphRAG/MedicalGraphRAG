@@ -21,7 +21,7 @@ class Config:
         # 大模型配置
         "LLM_PROVIDER": "DeepSeek",
         "DEEPSEEK_API": "https://api.deepseek.cn/v1/chat/completions",
-        "DEEPSEEK_KEY": "your_api_key",
+        "DEEPSEEK_KEY": "",
         "TONGYI_API": "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation",
         "TONGYI_KEY": "",
 

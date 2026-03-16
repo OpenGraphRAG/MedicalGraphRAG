@@ -15,6 +15,16 @@ from config import config
 import requests
 import json
 import numpy as np
+import re
+
+# Document class - compatible with multiple langchain versions
+try:
+    from langchain_core.documents import Document
+except ImportError:
+    try:
+        from langchain.schema.document import Document
+    except ImportError:
+        from langchain_community.docstore.document import Document
 
 class TongyiEmbeddings:
     """通义千问嵌入模型API封装"""
@@ -107,10 +117,8 @@ class VectorDBManager:
     def _load_documents(self, file_path: str) -> List[Any]:
         print(f"加载文件: {file_path}")
         try:
-            # 支持更多文件类型
             file_ext = os.path.splitext(file_path)[1].lower()
 
-            # 检查文件是否存在且可读
             if not os.path.exists(file_path):
                 print(f"文件不存在: {file_path}")
                 return []
@@ -119,28 +127,88 @@ class VectorDBManager:
                 print(f"文件不可读: {file_path}")
                 return []
 
-            # 尝试多种加载方式，增加容错性
             loaders = []
 
             if file_ext == '.pdf':
-                # 对于PDF，尝试多种加载器
                 loaders.append(("PyPDFLoader", lambda: PyPDFLoader(file_path).load()))
                 loaders.append(("UnstructuredPDFLoader", lambda: UnstructuredFileLoader(file_path).load()))
-            elif file_ext in ['.docx', '.doc']:
-                # 统一处理Word文档
-                loaders.append(
-                    ("UnstructuredWordDocumentLoader", lambda: UnstructuredWordDocumentLoader(file_path).load()))
+
+            elif file_ext == '.docx':
+                # .docx 是 zip 格式
                 loaders.append(("Docx2txtLoader", lambda: Docx2txtLoader(file_path).load()))
+                loaders.append(("UnstructuredWordDocumentLoader", lambda: UnstructuredWordDocumentLoader(file_path).load()))
+
+            elif file_ext == '.doc':
+                # .doc 是旧版二进制格式，需要特殊处理
+                loaders.append(("UnstructuredWordDocumentLoader", lambda: UnstructuredWordDocumentLoader(file_path).load()))
+                # 添加原始二进制文本提取作为后备方案
+                def _extract_doc_raw():
+                    """从 .doc 文件中提取可读文本（后备方案）"""
+                    text_parts = []
+                    with open(file_path, 'rb') as f:
+                        raw = f.read()
+                    # 尝试提取可打印的 Unicode/ASCII 文本片段
+                    # 提取连续的中英文文本
+                    decoded = raw.decode('utf-8', errors='ignore')
+                    segments = re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffefa-zA-Z0-9\s,.;:!?，。；：！？、""''（）+/%-]+', decoded)
+                    text = '\n'.join([s.strip() for s in segments if len(s.strip()) > 10])
+                    if not text:
+                        decoded = raw.decode('gbk', errors='ignore')
+                        segments = re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffefa-zA-Z0-9\s,.;:!?，。；：！？、""''（）+/%-]+', decoded)
+                        text = '\n'.join([s.strip() for s in segments if len(s.strip()) > 10])
+                    if text.strip():
+                        return [Document(page_content=text, metadata={"source": file_path})]
+                    return []
+                loaders.append(("RawDocExtractor", _extract_doc_raw))
+
             elif file_ext == '.md':
                 loaders.append(("UnstructuredMarkdownLoader", lambda: UnstructuredMarkdownLoader(file_path).load()))
+
             elif file_ext == '.txt':
-                loaders.append(("TextLoader", lambda: TextLoader(file_path).load()))
+                # 明确指定 UTF-8 编码，失败则尝试 GBK
+                loaders.append(("TextLoader-UTF8", lambda: TextLoader(file_path, encoding='utf-8').load()))
+                loaders.append(("TextLoader-GBK", lambda: TextLoader(file_path, encoding='gbk').load()))
+                loaders.append(("TextLoader-Latin1", lambda: TextLoader(file_path, encoding='latin-1').load()))
+
+            elif file_ext in ['.xlsx', '.xls']:
+                loaders.append(("UnstructuredFileLoader", lambda: UnstructuredFileLoader(file_path).load()))
+                # 后备：用 openpyxl/xlrd 直接读取
+                def _extract_excel():
+                    try:
+                        import openpyxl
+                        wb = openpyxl.load_workbook(file_path, read_only=True)
+                        text_parts = []
+                        for sheet in wb.worksheets:
+                            for row in sheet.iter_rows(values_only=True):
+                                cells = [str(c) for c in row if c is not None]
+                                if cells:
+                                    text_parts.append('\t'.join(cells))
+                        wb.close()
+                        text = '\n'.join(text_parts)
+                        if text.strip():
+                            return [Document(page_content=text, metadata={"source": file_path})]
+                    except:
+                        pass
+                    return []
+                loaders.append(("ExcelExtractor", _extract_excel))
+
             else:
-                # 对于未知文件类型，尝试通用加载器
-                print(f"尝试使用通用加载器处理文件: {file_path}")
                 loaders.append(("UnstructuredFileLoader", lambda: UnstructuredFileLoader(file_path).load()))
 
-            # 尝试所有可用的加载器，直到有一个成功
+            # 最终后备：直接读取文件文本
+            def _raw_text_fallback():
+                for enc in ['utf-8', 'gbk', 'latin-1']:
+                    try:
+                        with open(file_path, 'r', encoding=enc) as f:
+                            text = f.read()
+                        if text.strip() and len(text.strip()) > 20:
+                            return [Document(page_content=text, metadata={"source": file_path})]
+                    except:
+                        continue
+                return []
+            loaders.append(("RawTextFallback", _raw_text_fallback))
+
+            # 尝试所有加载器
             for loader_name, loader_func in loaders:
                 try:
                     print(f"尝试使用 {loader_name} 加载文件...")
