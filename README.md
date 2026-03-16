@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/899a4a1d-d5ea-4c55-859e-0df8d85fad8e" /># MedicalGraphRAG 项目文档
+# MedicalGraphRAG 项目文档
 ## 感谢各位starter
 [![Stargazers repo roster for @OpenGraphRAG/MedicalGraphRAG](https://reporoster.com/stars/OpenGraphRAG/MedicalGraphRAG)](https://github.com/OpenGraphRAG/MedicalGraphRAG/stargazers)
 # MedicalGraphRAG — 基于 GraphRAG 的智能医学健康知识平台
